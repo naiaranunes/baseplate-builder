@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TeamSettings from "@/components/settings/TeamSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { useExcluirLiderado, useLideres, useLiderados, useSalvarLiderado, type Liderado } from "@/hooks/useEntregas";
 
@@ -90,6 +92,14 @@ export default function EquipePage() {
           <Button onClick={abrirNovo}><Plus className="h-4 w-4 mr-1.5" />Novo liderado</Button>
         </div>
 
+        <Tabs defaultValue="liderados">
+          {isAdmin && (
+            <TabsList>
+              <TabsTrigger value="liderados">Liderados</TabsTrigger>
+              <TabsTrigger value="lideres">Líderes</TabsTrigger>
+            </TabsList>
+          )}
+          <TabsContent value="liderados" className="space-y-5 mt-4">
         <div className="flex flex-wrap gap-2">
           <div className="relative flex-1 min-w-48">
             <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
