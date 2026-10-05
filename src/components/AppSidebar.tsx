@@ -74,7 +74,7 @@ export function AppSidebar({
         {!collapsed && (
           <div className="px-3 mb-6 select-none">
             <div className="text-[hsl(var(--sidebar-foreground))] text-xl font-black tracking-tight leading-none">
-              Metas<span style={{ color: "var(--color-blue-hover)" }}>IA</span>
+              Gestão <span style={{ color: "var(--color-blue-hover)" }}>Wiadupla</span>
             </div>
             <div className="text-[10px] uppercase tracking-widest text-[hsl(var(--sidebar-foreground))]/55 mt-1">
               Gestão de metas & resultados
