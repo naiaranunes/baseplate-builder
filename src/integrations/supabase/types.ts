@@ -143,10 +143,14 @@ export type Database = {
         Row: {
           created_at: string
           criado_por: string | null
+          data_realizacao: string | null
           descricao: string | null
           id: string
           lider_id: string
-          liderado_id: string
+          liderado_cadastro_id: string | null
+          liderado_id: string | null
+          observacao_realizacao: string | null
+          periodicidade: string
           prazo: string
           status: string
           titulo: string
@@ -155,10 +159,14 @@ export type Database = {
         Insert: {
           created_at?: string
           criado_por?: string | null
+          data_realizacao?: string | null
           descricao?: string | null
           id?: string
-          lider_id: string
-          liderado_id: string
+          lider_id?: string
+          liderado_cadastro_id?: string | null
+          liderado_id?: string | null
+          observacao_realizacao?: string | null
+          periodicidade?: string
           prazo: string
           status?: string
           titulo: string
@@ -167,14 +175,56 @@ export type Database = {
         Update: {
           created_at?: string
           criado_por?: string | null
+          data_realizacao?: string | null
           descricao?: string | null
           id?: string
           lider_id?: string
-          liderado_id?: string
+          liderado_cadastro_id?: string | null
+          liderado_id?: string | null
+          observacao_realizacao?: string | null
+          periodicidade?: string
           prazo?: string
           status?: string
           titulo?: string
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entregas_liderado_cadastro_id_fkey"
+            columns: ["liderado_cadastro_id"]
+            isOneToOne: false
+            referencedRelation: "liderados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      liderados: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          created_at: string
+          email: string | null
+          gestor_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          email?: string | null
+          gestor_id?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          email?: string | null
+          gestor_id?: string
+          id?: string
+          nome?: string
         }
         Relationships: []
       }
