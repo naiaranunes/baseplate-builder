@@ -160,6 +160,16 @@ export default function EquipePage() {
             </Table>
           )}
         </div>
+          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="lideres" className="mt-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Líderes são usuários da plataforma com papel de <strong>Supervisor</strong> ou <strong>Admin</strong>. Convide a pessoa, aprove o cadastro e defina o papel — ela passa a aparecer como opção de líder responsável.
+              </p>
+              <TeamSettings />
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
 
       <Dialog open={!!form} onOpenChange={(o) => !o && setForm(null)}>
