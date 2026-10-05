@@ -202,7 +202,7 @@ export function BurnUpChart({ meta, lancamentos, previsaoFinal }: Props) {
               tickFormatter={(v) =>
                 meta.unidade === "R$"
                   ? `R$${Math.round(v / 1000)}k`
-                  : `${v}${entrega.unidade === "%" ? "%" : ""}`
+                  : `${v}${meta.unidade === "%" ? "%" : ""}`
               }
               width={56}
             />
