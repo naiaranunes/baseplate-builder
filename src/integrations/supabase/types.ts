@@ -101,6 +101,83 @@ export type Database = {
         }
         Relationships: []
       }
+      entrega_historico: {
+        Row: {
+          autor_id: string | null
+          comentario: string | null
+          created_at: string
+          entrega_id: string
+          id: string
+          status_anterior: string | null
+          status_novo: string | null
+        }
+        Insert: {
+          autor_id?: string | null
+          comentario?: string | null
+          created_at?: string
+          entrega_id: string
+          id?: string
+          status_anterior?: string | null
+          status_novo?: string | null
+        }
+        Update: {
+          autor_id?: string | null
+          comentario?: string | null
+          created_at?: string
+          entrega_id?: string
+          id?: string
+          status_anterior?: string | null
+          status_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entrega_historico_entrega_id_fkey"
+            columns: ["entrega_id"]
+            isOneToOne: false
+            referencedRelation: "entregas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entregas: {
+        Row: {
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          lider_id: string
+          liderado_id: string
+          prazo: string
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          lider_id: string
+          liderado_id: string
+          prazo: string
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          lider_id?: string
+          liderado_id?: string
+          prazo?: string
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       meta_comentarios: {
         Row: {
           autor_id: string | null
@@ -506,6 +583,13 @@ export type Database = {
         Returns: boolean
       }
       is_active_member: { Args: never; Returns: boolean }
+      list_members: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
       read_vault_secret: { Args: { p_key: string }; Returns: string }
       store_vault_secret: {
         Args: { p_key: string; p_value: string }
