@@ -23,8 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BurnUpChart } from "@/components/entregas/BurnUpChart";
-import { StatusChip } from "@/components/entregas/StatusChip";
+import { BurnUpChart } from "@/components/metas/BurnUpChart";
+import { StatusChip } from "@/components/metas/StatusChip";
 import {
   useComentarios,
   useCreateComentario,
@@ -41,7 +41,7 @@ import {
   progressoEsperado,
   progressoReal,
   type Status,
-} from "@/lib/entregas";
+} from "@/lib/metas";
 import { useAuth } from "@/hooks/useAuth";
 
 function initials(name?: string | null) {

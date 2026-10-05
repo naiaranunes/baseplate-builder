@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AREAS, PERIODICIDADES, todayISO } from "@/lib/entregas";
+import { AREAS, PERIODICIDADES, todayISO } from "@/lib/metas";
 import { useCreateMeta, useMembros } from "@/hooks/useMetas";
 
 type Props = {

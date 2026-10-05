@@ -8,7 +8,7 @@ import type {
   MetaUpdate,
   MetaWithResponsavel,
   Status,
-} from "@/lib/entregas";
+} from "@/lib/metas";
 
 const METAS_KEY = ["entregas"] as const;
 

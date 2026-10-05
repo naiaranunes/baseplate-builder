@@ -10,12 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MetaCard } from "@/components/entregas/MetaCard";
-import { NovaMetaModal } from "@/components/entregas/NovaMetaModal";
-import { LancarResultadoModal } from "@/components/entregas/LancarResultadoModal";
-import { HistoricoModal } from "@/components/entregas/HistoricoModal";
+import { MetaCard } from "@/components/metas/MetaCard";
+import { NovaMetaModal } from "@/components/metas/NovaMetaModal";
+import { LancarResultadoModal } from "@/components/metas/LancarResultadoModal";
+import { HistoricoModal } from "@/components/metas/HistoricoModal";
 import { useMetas } from "@/hooks/useMetas";
-import { AREAS, PERIODICIDADES, type MetaWithResponsavel, type Status } from "@/lib/entregas";
+import { AREAS, PERIODICIDADES, type MetaWithResponsavel, type Status } from "@/lib/metas";
 import { cn } from "@/lib/utils";
 
 const STATUS_FILTERS: { value: "todas" | Status; label: string }[] = [

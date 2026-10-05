@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { StatusChip } from "@/components/entregas/StatusChip";
+import { StatusChip } from "@/components/metas/StatusChip";
 import {
   useAddTarefa,
   useDeletePlano,

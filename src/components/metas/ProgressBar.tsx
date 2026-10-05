@@ -1,5 +1,5 @@
-import type { Status } from "@/lib/entregas";
-import { STATUS_COLOR } from "@/lib/entregas";
+import type { Status } from "@/lib/metas";
+import { STATUS_COLOR } from "@/lib/metas";
 
 /** 0..1 progress bar tinted by status. */
 export function ProgressBar({

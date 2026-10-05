@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { proximoPrazo, type EntregaStatus, type Periodicidade } from "@/lib/entregas";
+import { proximoPrazo, type EntregaStatus, type Periodicidade } from "@/lib/metas";
 
 export type Liderado = { id: string; gestor_id: string; nome: string; cargo: string | null; email: string | null; area: string | null; ativo: boolean };
 

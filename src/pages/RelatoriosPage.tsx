@@ -20,8 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProgressBar } from "@/components/entregas/ProgressBar";
-import { StatusChip } from "@/components/entregas/StatusChip";
+import { ProgressBar } from "@/components/metas/ProgressBar";
+import { StatusChip } from "@/components/metas/StatusChip";
 import { useMetas } from "@/hooks/useMetas";
 import {
   AREAS,
@@ -32,7 +32,7 @@ import {
   STATUS_COLOR,
   type MetaWithResponsavel,
   type Status,
-} from "@/lib/entregas";
+} from "@/lib/metas";
 import { cn } from "@/lib/utils";
 
 type Periodo = "todos" | "30d" | "trimestre" | "ano";

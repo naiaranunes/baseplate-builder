@@ -14,10 +14,10 @@ import {
   STATUS_COLOR,
   type MetaWithResponsavel,
   type Status,
-} from "@/lib/entregas";
-import { StatusDot } from "@/components/entregas/StatusChip";
-import { ProgressBar } from "@/components/entregas/ProgressBar";
-import { NovaMetaModal } from "@/components/entregas/NovaMetaModal";
+} from "@/lib/metas";
+import { StatusDot } from "@/components/metas/StatusChip";
+import { ProgressBar } from "@/components/metas/ProgressBar";
+import { NovaMetaModal } from "@/components/metas/NovaMetaModal";
 
 function greeting(): string {
   const h = new Date().getHours();

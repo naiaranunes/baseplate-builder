@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Plano, Tarefa } from "@/lib/entregas";
+import type { Plano, Tarefa } from "@/lib/metas";
 
 const PLANOS_KEY = ["planos"] as const;
 

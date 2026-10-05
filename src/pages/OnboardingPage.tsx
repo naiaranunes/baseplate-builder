@@ -20,7 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useSaveSlackWebhook } from "@/hooks/useAppSettings";
 import { useCreateMeta } from "@/hooks/useMetas";
-import { AREAS, PERIODICIDADES, todayISO } from "@/lib/entregas";
+import { AREAS, PERIODICIDADES, todayISO } from "@/lib/metas";
 
 const STEPS = [
   { id: "profile", label: "Perfil", icon: User2 },

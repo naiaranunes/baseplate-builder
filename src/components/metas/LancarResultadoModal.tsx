@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useLancarResultado, useMetas } from "@/hooks/useMetas";
-import { formatValor, todayISO } from "@/lib/entregas";
+import { formatValor, todayISO } from "@/lib/metas";
 
 type Props = {
   open: boolean;

@@ -1,5 +1,5 @@
-import type { Status } from "@/lib/entregas";
-import { STATUS_COLOR, STATUS_LABEL } from "@/lib/entregas";
+import type { Status } from "@/lib/metas";
+import { STATUS_COLOR, STATUS_LABEL } from "@/lib/metas";
 import { cn } from "@/lib/utils";
 
 export function StatusChip({

@@ -9,8 +9,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Lancamento, MetaWithResponsavel } from "@/lib/entregas";
-import { formatDateISOToBR, formatValor, progressoReal, todayISO } from "@/lib/entregas";
+import type { Lancamento, MetaWithResponsavel } from "@/lib/metas";
+import { formatDateISOToBR, formatValor, progressoReal, todayISO } from "@/lib/metas";
 
 type Props = {
   meta: MetaWithResponsavel;

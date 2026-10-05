@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import type { Status } from "@/lib/entregas";
+import type { Status } from "@/lib/metas";
 
 type Notif = {
   id: string;

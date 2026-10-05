@@ -8,7 +8,7 @@ import {
   progressoReal,
   type MetaWithResponsavel,
   type Status,
-} from "@/lib/entregas";
+} from "@/lib/metas";
 import { Button } from "@/components/ui/button";
 import { StatusChip } from "./StatusChip";
 import { ProgressBar } from "./ProgressBar";

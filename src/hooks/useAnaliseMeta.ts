@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Lancamento, MetaWithResponsavel } from "@/lib/entregas";
+import type { Lancamento, MetaWithResponsavel } from "@/lib/metas";
 
 export type AnaliseIA = {
   diagnostico: string;

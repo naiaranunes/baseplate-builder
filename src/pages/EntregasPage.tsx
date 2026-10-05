@@ -20,7 +20,7 @@ import {
 import {
   PERIODICIDADE_LABEL, STATUS_LABEL, STATUS_OPCOES, hojeISO, isConcluida, noPrazo, statusExibido,
   type EntregaStatus, type Periodicidade, type StatusExibido,
-} from "@/lib/entregas";
+} from "@/lib/metas";
 
 const STATUS_VARIANT: Record<StatusExibido, "default" | "secondary" | "destructive" | "outline"> = {
   pendente: "outline", em_andamento: "secondary", entregue: "default", aprovada: "default", devolvida: "destructive", atrasada: "destructive",
