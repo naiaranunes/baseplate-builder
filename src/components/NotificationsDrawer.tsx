@@ -24,7 +24,7 @@ function useLatestMetaStatusChanges() {
     queryKey: ["notifications", "entregas-recent"],
     queryFn: async (): Promise<Notif[]> => {
       const { data, error } = await supabase
-        .from("entregas")
+        .from("metas")
         .select("id, nome, status, updated_at")
         .order("updated_at", { ascending: false })
         .limit(10);

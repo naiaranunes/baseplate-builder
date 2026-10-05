@@ -67,7 +67,7 @@ export function PlanoCard({ plano }: { plano: PlanoWithMeta }) {
             <h3 className="font-semibold text-base truncate">{plano.titulo}</h3>
             {plano.meta && (
               <Link
-                to={`/entregas/${plano.entrega.id}/analise`}
+                to={`/metas/${plano.meta.id}/analise`}
                 className="text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1 hover:opacity-80"
                 style={{ backgroundColor: "var(--color-blue-soft)", color: "var(--color-blue)" }}
               >

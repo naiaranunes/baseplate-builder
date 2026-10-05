@@ -22,7 +22,7 @@ export function usePlanos() {
         await Promise.all([
           supabase.from("planos_acao").select("*").order("created_at", { ascending: false }),
           supabase.from("plano_tarefas").select("*").order("ordem", { ascending: true }),
-          supabase.from("entregas").select("id, nome, status, area"),
+          supabase.from("metas").select("id, nome, status, area"),
         ]);
       if (pErr) throw pErr;
       if (tErr) throw tErr;

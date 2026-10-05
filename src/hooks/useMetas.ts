@@ -112,7 +112,7 @@ export function useCreateMeta() {
       if (statusErr) throw statusErr;
 
       const { data, error } = await supabase
-        .from("entregas")
+        .from("metas")
         .insert({
           ...input,
           criado_por: uid,
@@ -134,7 +134,7 @@ export function useUpdateMeta() {
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: MetaUpdate }) => {
       const { data, error } = await supabase
-        .from("entregas")
+        .from("metas")
         .update(patch)
         .eq("id", id)
         .select()
@@ -166,7 +166,7 @@ export function useLancarResultado() {
 
       // Carrega meta atual para recalcular status
       const { data: meta, error: metaErr } = await supabase
-        .from("entregas")
+        .from("metas")
         .select("valor_alvo, data_inicio, data_fim, is_inverse, status")
         .eq("id", input.meta_id)
         .single();
@@ -209,7 +209,7 @@ export function useLancarResultado() {
       if (statusErr) throw statusErr;
 
       const { error: updErr } = await supabase
-        .from("entregas")
+        .from("metas")
         .update({ valor_atual: valorAtual, status: novoStatus as Status })
         .eq("id", input.meta_id);
       if (updErr) throw updErr;

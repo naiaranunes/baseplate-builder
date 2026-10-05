@@ -7,7 +7,7 @@ export function useDemoStatus() {
     queryKey: ["demo-status"],
     queryFn: async () => {
       const [{ count: metas }, { count: lancamentos }, { count: planos }] = await Promise.all([
-        supabase.from("entregas").select("id", { count: "exact", head: true }).eq("is_demo", true),
+        supabase.from("metas").select("id", { count: "exact", head: true }).eq("is_demo", true),
         supabase.from("meta_lancamentos").select("id", { count: "exact", head: true }).eq("is_demo", true),
         supabase.from("planos_acao").select("id", { count: "exact", head: true }).eq("is_demo", true),
       ]);
@@ -198,7 +198,7 @@ export function useLoadDemoData() {
       }));
 
       const { data: createdMetas, error: mErr } = await supabase
-        .from("entregas")
+        .from("metas")
         .insert(metasRows)
         .select();
       if (mErr) throw mErr;
@@ -213,7 +213,7 @@ export function useLoadDemoData() {
           p_is_inverse: meta.is_inverse,
         });
         if (status) {
-          await supabase.from("entregas").update({ status }).eq("id", meta.id);
+          await supabase.from("metas").update({ status }).eq("id", meta.id);
         }
       }
 
@@ -284,7 +284,7 @@ export function useClearDemoData() {
       // (mas planos podem ter is_demo independente — deletamos explicitamente também)
       await supabase.from("planos_acao").delete().eq("is_demo", true);
       await supabase.from("meta_lancamentos").delete().eq("is_demo", true);
-      await supabase.from("entregas").delete().eq("is_demo", true);
+      await supabase.from("metas").delete().eq("is_demo", true);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entregas"] });
