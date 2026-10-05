@@ -15,6 +15,13 @@
       "when": 1791203535528,
       "tag": "0001_agenda_entregas",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791204274380,
+      "tag": "0002_equipe_area_lideres",
+      "breakpoints": true
     }
   ]
 }
