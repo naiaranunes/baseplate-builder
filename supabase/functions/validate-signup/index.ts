@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { requireUser, unauthorizedResponse } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,15 +9,8 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Portao de autenticacao (revisao 26/08/2026): sem isto a function respondia a
-  // um POST sem credencial nenhuma. Ver supabase/functions/_shared/auth.ts.
-  try {
-    await requireUser(req);
-  } catch (e) {
-    const resp = unauthorizedResponse(e, corsHeaders);
-    if (resp) return resp;
-    throw e;
-  }
+  // Public by design: called before signup, when the visitor has no session.
+  // It only answers allowed/not-allowed for an email domain.
 
   try {
     const { email } = await req.json();
