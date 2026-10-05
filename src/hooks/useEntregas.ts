@@ -1,15 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { EntregaStatus } from "@/lib/entregas";
+import { proximoPrazo, type EntregaStatus, type Periodicidade } from "@/lib/entregas";
+
+export type Liderado = { id: string; gestor_id: string; nome: string; cargo: string | null; email: string | null; ativo: boolean };
 
 export type Entrega = {
   id: string;
   titulo: string;
   descricao: string | null;
   lider_id: string;
-  liderado_id: string;
+  liderado_cadastro_id: string | null;
   prazo: string;
   status: EntregaStatus;
+  periodicidade: Periodicidade;
+  data_realizacao: string | null;
+  observacao_realizacao: string | null;
   created_at: string;
 };
 
@@ -34,13 +39,52 @@ export function useMembros() {
   });
 }
 
+export function useLiderados() {
+  return useQuery({
+    queryKey: ["liderados"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("liderados").select("*").order("nome");
+      if (error) throw error;
+      return (data ?? []) as Liderado[];
+    },
+  });
+}
+
+export function useSalvarLiderado() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id?: string; nome: string; cargo?: string | null; email?: string | null; ativo?: boolean }) => {
+      const { id, ...rest } = input;
+      const { error } = id
+        ? await supabase.from("liderados").update(rest).eq("id", id)
+        : await supabase.from("liderados").insert(rest);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["liderados"] }),
+  });
+}
+
+export function useExcluirLiderado() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("liderados").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["liderados"] });
+      qc.invalidateQueries({ queryKey: ["entregas"] });
+    },
+  });
+}
+
 export function useEntregas() {
   return useQuery({
     queryKey: ["entregas"],
     queryFn: async () => {
       const { data, error } = await supabase.from("entregas").select("*").order("prazo");
       if (error) throw error;
-      return (data ?? []) as Entrega[];
+      return (data ?? []) as unknown as Entrega[];
     },
   });
 }
@@ -61,7 +105,7 @@ export function useHistorico(entregaId?: string) {
 export function useCreateEntrega() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { titulo: string; descricao?: string; lider_id: string; liderado_id: string; prazo: string }) => {
+    mutationFn: async (input: { titulo: string; descricao?: string; liderado_cadastro_id: string; prazo: string; periodicidade: Periodicidade }) => {
       const { error } = await supabase.from("entregas").insert(input);
       if (error) throw error;
     },
@@ -83,6 +127,32 @@ export function useUpdateStatus() {
   });
 }
 
+/** Registra a realização e, se for recorrente, agenda a próxima ocorrência. */
+export function useRegistrarRealizacao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entrega, data, observacao }: { entrega: Entrega; data: string; observacao?: string }) => {
+      const { error } = await supabase.from("entregas")
+        .update({ status: "entregue", data_realizacao: data, observacao_realizacao: observacao || null })
+        .eq("id", entrega.id);
+      if (error) throw error;
+      const prox = proximoPrazo(entrega.prazo, entrega.periodicidade);
+      if (prox) {
+        const { error: e2 } = await supabase.from("entregas").insert({
+          titulo: entrega.titulo, descricao: entrega.descricao, liderado_cadastro_id: entrega.liderado_cadastro_id,
+          prazo: prox, periodicidade: entrega.periodicidade,
+        });
+        if (e2) throw e2;
+      }
+      return prox;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["entregas"] });
+      qc.invalidateQueries({ queryKey: ["entrega_historico", v.entrega.id] });
+    },
+  });
+}
+
 export function useAddComentario() {
   const qc = useQueryClient();
   return useMutation({
@@ -91,5 +161,16 @@ export function useAddComentario() {
       if (error) throw error;
     },
     onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["entrega_historico", v.entrega_id] }),
+  });
+}
+
+export function useExcluirEntrega() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("entregas").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["entregas"] }),
   });
 }
