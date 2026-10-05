@@ -14,6 +14,7 @@ import MetasPage from "./pages/MetasPage";
 import AnaliseMetaPage from "./pages/AnaliseMetaPage";
 import PlanosPage from "./pages/PlanosPage";
 import EntregasPage from "./pages/EntregasPage";
+import EquipePage from "@/pages/EquipePage";
 import RelatoriosPage from "./pages/RelatoriosPage";
 import AjudaPage from "./pages/AjudaPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/metas/:id/analise" element={
               <ProtectedRoute><AnaliseMetaPage /></ProtectedRoute>
             } />
+            <Route path="/equipe" element={<ProtectedRoute><EquipePage /></ProtectedRoute>} />
             <Route path="/entregas" element={<ProtectedRoute><EntregasPage /></ProtectedRoute>} />
             <Route path="/planos" element={
               <ProtectedRoute><PlanosPage /></ProtectedRoute>

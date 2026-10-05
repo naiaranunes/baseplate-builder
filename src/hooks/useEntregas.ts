@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { proximoPrazo, type EntregaStatus, type Periodicidade } from "@/lib/entregas";
 
-export type Liderado = { id: string; gestor_id: string; nome: string; cargo: string | null; email: string | null; ativo: boolean };
+export type Liderado = { id: string; gestor_id: string; nome: string; cargo: string | null; email: string | null; area: string | null; ativo: boolean };
 
 export type Entrega = {
   id: string;
@@ -50,10 +50,21 @@ export function useLiderados() {
   });
 }
 
+export function useLideres() {
+  return useQuery({
+    queryKey: ["lideres"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("list_leaders");
+      if (error) throw error;
+      return (data ?? []) as { id: string; full_name: string }[];
+    },
+  });
+}
+
 export function useSalvarLiderado() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id?: string; nome: string; cargo?: string | null; email?: string | null; ativo?: boolean }) => {
+    mutationFn: async (input: { id?: string; nome: string; cargo?: string | null; email?: string | null; area?: string | null; gestor_id?: string; ativo?: boolean }) => {
       const { id, ...rest } = input;
       const { error } = id
         ? await supabase.from("liderados").update(rest).eq("id", id)
@@ -64,12 +75,21 @@ export function useSalvarLiderado() {
   });
 }
 
+/** Exclui só se não houver entregas; caso contrário, inativa (preserva histórico). Retorna "inativado" | "excluido". */
 export function useExcluirLiderado() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const { count, error: e1 } = await supabase.from("entregas").select("id", { count: "exact", head: true }).eq("liderado_cadastro_id", id);
+      if (e1) throw e1;
+      if ((count ?? 0) > 0) {
+        const { error } = await supabase.from("liderados").update({ ativo: false }).eq("id", id);
+        if (error) throw error;
+        return "inativado" as const;
+      }
       const { error } = await supabase.from("liderados").delete().eq("id", id);
       if (error) throw error;
+      return "excluido" as const;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["liderados"] });

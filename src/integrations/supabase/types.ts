@@ -200,6 +200,7 @@ export type Database = {
       }
       liderados: {
         Row: {
+          area: string | null
           ativo: boolean
           cargo: string | null
           created_at: string
@@ -207,8 +208,10 @@ export type Database = {
           gestor_id: string
           id: string
           nome: string
+          updated_at: string
         }
         Insert: {
+          area?: string | null
           ativo?: boolean
           cargo?: string | null
           created_at?: string
@@ -216,8 +219,10 @@ export type Database = {
           gestor_id?: string
           id?: string
           nome: string
+          updated_at?: string
         }
         Update: {
+          area?: string | null
           ativo?: boolean
           cargo?: string | null
           created_at?: string
@@ -225,6 +230,7 @@ export type Database = {
           gestor_id?: string
           id?: string
           nome?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -633,6 +639,13 @@ export type Database = {
         Returns: boolean
       }
       is_active_member: { Args: never; Returns: boolean }
+      list_leaders: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
       list_members: {
         Args: never
         Returns: {
