@@ -159,7 +159,7 @@ const FAQS: FAQ[] = [
         <Link to="/configuracoes/team" className="font-medium" style={blueLink}>
           Configurações → Equipe
         </Link>{" "}
-        para aprovar novos cadastros, alterar roles (admin, supervisor, agent),
+        para aprovar novos cadastros, alterar permissões (Admin, Supervisor, Colaborador),
         desativar e reativar usuários. Novos cadastros ficam pendentes até a
         aprovação de um admin.
       </>
