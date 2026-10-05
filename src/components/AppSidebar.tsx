@@ -42,7 +42,7 @@ export function AppSidebar({
 
   const items: NavItem[] = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Entregas", url: "/entregas", icon: PackageCheck },
+    { title: "Agenda de Entregas", url: "/entregas", icon: PackageCheck },
     { title: "Minhas Metas", url: "/metas", icon: Target },
     { title: "Planos de Ação", url: "/planos", icon: ListChecks },
     { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
