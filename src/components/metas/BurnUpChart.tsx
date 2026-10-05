@@ -9,8 +9,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Lancamento, MetaWithResponsavel } from "@/lib/metas";
-import { formatDateISOToBR, formatValor, progressoReal, todayISO } from "@/lib/metas";
+import type { Lancamento, MetaWithResponsavel } from "@/lib/entregas";
+import { formatDateISOToBR, formatValor, progressoReal, todayISO } from "@/lib/entregas";
 
 type Props = {
   meta: MetaWithResponsavel;
@@ -158,7 +158,7 @@ export function BurnUpChart({ meta, lancamentos, previsaoFinal }: Props) {
   return (
     <div className="metasia-card p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold">Trajetória da meta</h3>
+        <h3 className="text-sm font-semibold">Trajetória da entrega</h3>
         <div className="flex gap-3 text-xs">
           <span className="flex items-center gap-1.5">
             <span
@@ -202,7 +202,7 @@ export function BurnUpChart({ meta, lancamentos, previsaoFinal }: Props) {
               tickFormatter={(v) =>
                 meta.unidade === "R$"
                   ? `R$${Math.round(v / 1000)}k`
-                  : `${v}${meta.unidade === "%" ? "%" : ""}`
+                  : `${v}${entrega.unidade === "%" ? "%" : ""}`
               }
               width={56}
             />

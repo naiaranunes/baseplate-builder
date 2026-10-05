@@ -4,12 +4,12 @@ import { Bell, ChevronRight } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { AppSidebar } from "@/components/AppSidebar";
-import { LancarResultadoModal } from "@/components/metas/LancarResultadoModal";
+import { LancarResultadoModal } from "@/components/entregas/LancarResultadoModal";
 import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
-  metas: "Minhas Metas",
+  metas: "Minhas Entregas",
   analise: "Análise de Saúde",
   planos: "Planos de Ação",
   relatorios: "Relatórios",

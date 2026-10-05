@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handler = () => {
       if (!user) return;
       try {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`;
+        const url = `${import.entrega.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`;
         const body = JSON.stringify({ status: "offline" });
         fetch(url, {
           method: "PATCH",

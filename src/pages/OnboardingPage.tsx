@@ -20,13 +20,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useSaveSlackWebhook } from "@/hooks/useAppSettings";
 import { useCreateMeta } from "@/hooks/useMetas";
-import { AREAS, PERIODICIDADES, todayISO } from "@/lib/metas";
+import { AREAS, PERIODICIDADES, todayISO } from "@/lib/entregas";
 
 const STEPS = [
   { id: "profile", label: "Perfil", icon: User2 },
   { id: "company", label: "Empresa", icon: Building2 },
   { id: "notifications", label: "Notificações", icon: Bell },
-  { id: "meta", label: "Primeira meta", icon: Target },
+  { id: "entrega", label: "Primeira entrega", icon: Target },
   { id: "done", label: "Concluído", icon: Sparkles },
 ] as const;
 
@@ -155,12 +155,12 @@ export default function OnboardingPage() {
 
   const saveFirstMeta = async () => {
     if (!criarMeta) {
-      await markStepComplete("meta");
+      await markStepComplete("entrega");
       return true;
     }
     const valor = Number(metaValor.replace(",", "."));
     if (!metaNome.trim()) {
-      toast.error("Informe o nome da meta.");
+      toast.error("Informe o nome da entrega.");
       return false;
     }
     if (!Number.isFinite(valor) || valor <= 0) {
@@ -189,12 +189,12 @@ export default function OnboardingPage() {
         data_fim: metaFim,
         is_inverse: metaInverse,
       });
-      toast.success("Primeira meta criada!");
+      toast.success("Primeira entrega criada!");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao criar meta.");
+      toast.error(e instanceof Error ? e.message : "Erro ao criar entrega.");
       return false;
     }
-    await markStepComplete("meta");
+    await markStepComplete("entrega");
     return true;
   };
 
@@ -204,7 +204,7 @@ export default function OnboardingPage() {
     if (id === "profile") ok = await saveProfile();
     else if (id === "company") ok = await saveCompany();
     else if (id === "notifications") ok = await saveNotifications();
-    else if (id === "meta") ok = await saveFirstMeta();
+    else if (id === "entrega") ok = await saveFirstMeta();
     if (ok) goNext();
   };
 
@@ -267,14 +267,14 @@ export default function OnboardingPage() {
             {current.id === "profile" && "Seus dados"}
             {current.id === "company" && "Sobre sua empresa"}
             {current.id === "notifications" && "Notificações"}
-            {current.id === "meta" && "Sua primeira meta"}
+            {current.id === "entrega" && "Sua primeira entrega"}
             {current.id === "done" && "Tudo pronto!"}
           </CardTitle>
           <CardDescription>
             {current.id === "profile" && "Confirme seu nome e telefone para que sua equipe te identifique."}
             {current.id === "company" && "Identifique sua organização para personalizar a plataforma."}
-            {current.id === "notifications" && "Receba alertas no Slack quando metas mudarem de status. Opcional."}
-            {current.id === "meta" && "Crie a primeira meta da sua operação. Você pode pular e criar depois."}
+            {current.id === "notifications" && "Receba alertas no Slack quando entregas mudarem de status. Opcional."}
+            {current.id === "entrega" && "Crie a primeira entrega da sua operação. Você pode pular e criar depois."}
             {current.id === "done" && "Sua plataforma está configurada. Bom trabalho!"}
           </CardDescription>
         </CardHeader>
@@ -315,11 +315,11 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {current.id === "meta" && (
+          {current.id === "entrega" && (
             <>
               <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
                 <div className="space-y-0.5">
-                  <Label className="cursor-pointer">Criar a primeira meta agora</Label>
+                  <Label className="cursor-pointer">Criar a primeira entrega agora</Label>
                   <p className="text-xs text-muted-foreground">Desative para pular esta etapa.</p>
                 </div>
                 <Switch checked={criarMeta} onCheckedChange={setCriarMeta} />
@@ -328,8 +328,8 @@ export default function OnboardingPage() {
               {criarMeta && (
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="meta-nome">Nome da meta *</Label>
-                    <Input id="meta-nome" value={metaNome} onChange={(e) => setMetaNome(e.target.value)} placeholder="Ex: Receita MRR Maio" />
+                    <Label htmlFor="entrega-nome">Nome da entrega *</Label>
+                    <Input id="entrega-nome" value={metaNome} onChange={(e) => setMetaNome(e.target.value)} placeholder="Ex: Receita MRR Maio" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
@@ -353,27 +353,27 @@ export default function OnboardingPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5 col-span-2">
-                      <Label htmlFor="meta-valor">Valor alvo *</Label>
-                      <Input id="meta-valor" inputMode="decimal" value={metaValor} onChange={(e) => setMetaValor(e.target.value)} placeholder="120000" />
+                      <Label htmlFor="entrega-valor">Valor alvo *</Label>
+                      <Input id="entrega-valor" inputMode="decimal" value={metaValor} onChange={(e) => setMetaValor(e.target.value)} placeholder="120000" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="meta-unidade">Unidade *</Label>
-                      <Input id="meta-unidade" value={metaUnidade} onChange={(e) => setMetaUnidade(e.target.value)} placeholder="R$" />
+                      <Label htmlFor="entrega-unidade">Unidade *</Label>
+                      <Input id="entrega-unidade" value={metaUnidade} onChange={(e) => setMetaUnidade(e.target.value)} placeholder="R$" />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="meta-inicio">Início *</Label>
-                      <Input id="meta-inicio" type="date" value={metaInicio} onChange={(e) => setMetaInicio(e.target.value)} />
+                      <Label htmlFor="entrega-inicio">Início *</Label>
+                      <Input id="entrega-inicio" type="date" value={metaInicio} onChange={(e) => setMetaInicio(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="meta-fim">Fim *</Label>
-                      <Input id="meta-fim" type="date" value={metaFim} onChange={(e) => setMetaFim(e.target.value)} />
+                      <Label htmlFor="entrega-fim">Fim *</Label>
+                      <Input id="entrega-fim" type="date" value={metaFim} onChange={(e) => setMetaFim(e.target.value)} />
                     </div>
                   </div>
                   <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
                     <div className="space-y-0.5">
-                      <Label className="cursor-pointer">Meta inversa (menor é melhor)</Label>
+                      <Label className="cursor-pointer">Entrega inversa (menor é melhor)</Label>
                       <p className="text-xs text-muted-foreground">Para churn, custos, tempo de resposta etc.</p>
                     </div>
                     <Switch checked={metaInverse} onCheckedChange={setMetaInverse} />

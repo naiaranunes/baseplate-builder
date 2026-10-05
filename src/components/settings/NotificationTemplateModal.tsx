@@ -39,8 +39,8 @@ const CANAIS = [
 ];
 
 const EVENTOS = [
-  { value: "meta_risco", label: "Meta em risco" },
-  { value: "meta_criada", label: "Nova meta criada" },
+  { value: "meta_risco", label: "Entrega em risco" },
+  { value: "meta_criada", label: "Nova entrega criada" },
   { value: "plano_criado", label: "Plano de ação adicionado" },
   { value: "resumo_semanal", label: "Resumo semanal" },
   { value: "custom", label: "Personalizado" },
@@ -99,7 +99,7 @@ export function NotificationTemplateModal({ open, onOpenChange, template }: Prop
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Nome</Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Meta em risco" />
+            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Entrega em risco" />
           </div>
 
           <div className="space-y-1.5">
@@ -150,7 +150,7 @@ export function NotificationTemplateModal({ open, onOpenChange, template }: Prop
               rows={4}
               value={mensagem}
               onChange={(e) => setMensagem(e.target.value)}
-              placeholder=":rotating_light: Meta {meta_nome} entrou em risco. Desvio: {desvio}%."
+              placeholder=":rotating_light: Entrega {meta_nome} entrou em risco. Desvio: {desvio}%."
             />
           </div>
         </div>

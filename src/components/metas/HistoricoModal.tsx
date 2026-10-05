@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useLancamentos } from "@/hooks/useMetas";
-import { formatDateISOToBR, formatValor, type MetaWithResponsavel } from "@/lib/metas";
+import { formatDateISOToBR, formatValor, type MetaWithResponsavel } from "@/lib/entregas";
 
 type Props = {
   open: boolean;

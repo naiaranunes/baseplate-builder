@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { AppSettings } from "@/lib/metas";
+import type { AppSettings } from "@/lib/entregas";
 
 const KEY = ["app_settings"] as const;
 

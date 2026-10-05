@@ -8,9 +8,9 @@ import type {
   MetaUpdate,
   MetaWithResponsavel,
   Status,
-} from "@/lib/metas";
+} from "@/lib/entregas";
 
-const METAS_KEY = ["metas"] as const;
+const METAS_KEY = ["entregas"] as const;
 
 export function useMetas() {
   return useQuery({
@@ -28,7 +28,7 @@ export function useMetas() {
 
 export function useMeta(id: string | undefined) {
   return useQuery({
-    queryKey: ["metas", id],
+    queryKey: ["entregas", id],
     enabled: !!id,
     queryFn: async (): Promise<MetaWithResponsavel | null> => {
       if (!id) return null;
@@ -45,7 +45,7 @@ export function useMeta(id: string | undefined) {
 
 export function useLancamentos(metaId: string | undefined) {
   return useQuery({
-    queryKey: ["metas", metaId, "lancamentos"],
+    queryKey: ["entregas", metaId, "lancamentos"],
     enabled: !!metaId,
     queryFn: async (): Promise<Lancamento[]> => {
       if (!metaId) return [];
@@ -63,7 +63,7 @@ export function useLancamentos(metaId: string | undefined) {
 
 export function useComentarios(metaId: string | undefined) {
   return useQuery({
-    queryKey: ["metas", metaId, "comentarios"],
+    queryKey: ["entregas", metaId, "comentarios"],
     enabled: !!metaId,
     queryFn: async (): Promise<Comentario[]> => {
       if (!metaId) return [];
@@ -112,7 +112,7 @@ export function useCreateMeta() {
       if (statusErr) throw statusErr;
 
       const { data, error } = await supabase
-        .from("metas")
+        .from("entregas")
         .insert({
           ...input,
           criado_por: uid,
@@ -134,7 +134,7 @@ export function useUpdateMeta() {
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: MetaUpdate }) => {
       const { data, error } = await supabase
-        .from("metas")
+        .from("entregas")
         .update(patch)
         .eq("id", id)
         .select()
@@ -144,7 +144,7 @@ export function useUpdateMeta() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: METAS_KEY });
-      qc.invalidateQueries({ queryKey: ["metas", vars.id] });
+      qc.invalidateQueries({ queryKey: ["entregas", vars.id] });
     },
   });
 }
@@ -166,7 +166,7 @@ export function useLancarResultado() {
 
       // Carrega meta atual para recalcular status
       const { data: meta, error: metaErr } = await supabase
-        .from("metas")
+        .from("entregas")
         .select("valor_alvo, data_inicio, data_fim, is_inverse, status")
         .eq("id", input.meta_id)
         .single();
@@ -209,7 +209,7 @@ export function useLancarResultado() {
       if (statusErr) throw statusErr;
 
       const { error: updErr } = await supabase
-        .from("metas")
+        .from("entregas")
         .update({ valor_atual: valorAtual, status: novoStatus as Status })
         .eq("id", input.meta_id);
       if (updErr) throw updErr;
@@ -222,8 +222,8 @@ export function useLancarResultado() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: METAS_KEY });
-      qc.invalidateQueries({ queryKey: ["metas", vars.meta_id] });
-      qc.invalidateQueries({ queryKey: ["metas", vars.meta_id, "lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["entregas", vars.meta_id] });
+      qc.invalidateQueries({ queryKey: ["entregas", vars.meta_id, "lancamentos"] });
     },
   });
 }
@@ -243,7 +243,7 @@ export function useCreateComentario() {
       return data as Comentario;
     },
     onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["metas", vars.metaId, "comentarios"] });
+      qc.invalidateQueries({ queryKey: ["entregas", vars.metaId, "comentarios"] });
     },
   });
 }

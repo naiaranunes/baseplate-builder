@@ -8,7 +8,7 @@ import {
   progressoReal,
   type MetaWithResponsavel,
   type Status,
-} from "@/lib/metas";
+} from "@/lib/entregas";
 import { Button } from "@/components/ui/button";
 import { StatusChip } from "./StatusChip";
 import { ProgressBar } from "./ProgressBar";
@@ -126,7 +126,7 @@ export function MetaCard({ meta, defaultOpen, onLancarResultado, onVerHistorico 
               Ver histórico
             </Button>
             <Button size="sm" variant="outline" asChild>
-              <Link to={`/metas/${meta.id}/analise`}>
+              <Link to={`/entregas/${entrega.id}/analise`}>
                 <Sparkles className="h-4 w-4 mr-1.5" />
                 Análise IA
               </Link>

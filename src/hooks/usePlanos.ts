@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Plano, Tarefa } from "@/lib/metas";
+import type { Plano, Tarefa } from "@/lib/entregas";
 
 const PLANOS_KEY = ["planos"] as const;
 
@@ -22,7 +22,7 @@ export function usePlanos() {
         await Promise.all([
           supabase.from("planos_acao").select("*").order("created_at", { ascending: false }),
           supabase.from("plano_tarefas").select("*").order("ordem", { ascending: true }),
-          supabase.from("metas").select("id, nome, status, area"),
+          supabase.from("entregas").select("id, nome, status, area"),
         ]);
       if (pErr) throw pErr;
       if (tErr) throw tErr;
@@ -38,7 +38,7 @@ export function usePlanos() {
       return (planos ?? []).map((p) => ({
         ...(p as Plano),
         meta: p.meta_id
-          ? (metaById.get(p.meta_id) as PlanoWithMeta["meta"]) ?? null
+          ? (metaById.get(p.meta_id) as PlanoWithMeta["entrega"]) ?? null
           : null,
         tarefas: tarefasByPlano.get(p.id) ?? [],
       }));

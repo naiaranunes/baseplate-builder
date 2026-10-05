@@ -29,7 +29,7 @@ const TAB_META: Record<Tab, { title: string; description: string }> = {
   },
   notificacoes: {
     title: "Notificações",
-    description: "Configure alertas para Slack e canais externos quando metas mudam de status.",
+    description: "Configure alertas para Slack e canais externos quando entregas mudam de status.",
   },
   security: {
     title: "Segurança",

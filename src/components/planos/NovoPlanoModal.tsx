@@ -85,13 +85,13 @@ export function NovoPlanoModal({ open, onOpenChange }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Meta vinculada</Label>
+            <Label>Entrega vinculada</Label>
             <Select value={metaId} onValueChange={setMetaId}>
               <SelectTrigger>
-                <SelectValue placeholder="Sem meta vinculada" />
+                <SelectValue placeholder="Sem entrega vinculada" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">Sem meta vinculada</SelectItem>
+                <SelectItem value="__none__">Sem entrega vinculada</SelectItem>
                 {metas.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.nome}

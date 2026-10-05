@@ -10,12 +10,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MetaCard } from "@/components/metas/MetaCard";
-import { NovaMetaModal } from "@/components/metas/NovaMetaModal";
-import { LancarResultadoModal } from "@/components/metas/LancarResultadoModal";
-import { HistoricoModal } from "@/components/metas/HistoricoModal";
+import { MetaCard } from "@/components/entregas/MetaCard";
+import { NovaMetaModal } from "@/components/entregas/NovaMetaModal";
+import { LancarResultadoModal } from "@/components/entregas/LancarResultadoModal";
+import { HistoricoModal } from "@/components/entregas/HistoricoModal";
 import { useMetas } from "@/hooks/useMetas";
-import { AREAS, PERIODICIDADES, type MetaWithResponsavel, type Status } from "@/lib/metas";
+import { AREAS, PERIODICIDADES, type MetaWithResponsavel, type Status } from "@/lib/entregas";
 import { cn } from "@/lib/utils";
 
 const STATUS_FILTERS: { value: "todas" | Status; label: string }[] = [
@@ -51,9 +51,9 @@ export default function MetasPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">Minhas Metas</h1>
+            <h1 className="text-2xl font-bold">Minhas Entregas</h1>
             <p className="text-sm text-muted-foreground">
-              {metas?.length ?? 0} {metas?.length === 1 ? "meta" : "metas"} cadastradas
+              {metas?.length ?? 0} {metas?.length === 1 ? "entrega" : "entregas"} cadastradas
             </p>
           </div>
           <Button
@@ -147,7 +147,7 @@ export default function MetasPage() {
           </div>
         ) : isError ? (
           <div className="metasia-card p-8 text-center space-y-3">
-            <p className="text-sm text-muted-foreground">Não foi possível carregar as metas.</p>
+            <p className="text-sm text-muted-foreground">Não foi possível carregar as entregas.</p>
             <Button variant="outline" onClick={() => refetch()}>
               Tentar novamente
             </Button>
@@ -216,7 +216,7 @@ function EmptyState({
       </div>
       {hasFilters ? (
         <>
-          <h2 className="text-lg font-semibold">Nenhuma meta atende a esses filtros</h2>
+          <h2 className="text-lg font-semibold">Nenhuma entrega atende a esses filtros</h2>
           <p className="text-sm text-muted-foreground max-w-md">
             Ajuste os filtros acima para ver mais resultados ou crie uma nova meta.
           </p>
@@ -236,7 +236,7 @@ function EmptyState({
         </>
       ) : (
         <>
-          <h2 className="text-lg font-semibold">Nenhuma meta cadastrada ainda</h2>
+          <h2 className="text-lg font-semibold">Nenhuma entrega cadastrada ainda</h2>
           <p className="text-sm text-muted-foreground max-w-md">
             Crie sua primeira meta para começar a acompanhar resultados, lançar entregas e
             receber análises de saúde com IA.

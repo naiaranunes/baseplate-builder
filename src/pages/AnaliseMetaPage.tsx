@@ -23,8 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BurnUpChart } from "@/components/metas/BurnUpChart";
-import { StatusChip } from "@/components/metas/StatusChip";
+import { BurnUpChart } from "@/components/entregas/BurnUpChart";
+import { StatusChip } from "@/components/entregas/StatusChip";
 import {
   useComentarios,
   useCreateComentario,
@@ -41,7 +41,7 @@ import {
   progressoEsperado,
   progressoReal,
   type Status,
-} from "@/lib/metas";
+} from "@/lib/entregas";
 import { useAuth } from "@/hooks/useAuth";
 
 function initials(name?: string | null) {
@@ -78,7 +78,7 @@ export default function AnaliseMetaPage() {
         toast.success("Tarefa adicionada ao plano");
       } else {
         await criarPlano.mutateAsync({
-          titulo: `Plano IA · ${meta?.nome ?? ""}`.trim(),
+          titulo: `Plano IA · ${entrega?.nome ?? ""}`.trim(),
           meta_id: id ?? null,
           tarefas: [{ descricao }],
         });
@@ -110,7 +110,7 @@ export default function AnaliseMetaPage() {
         toast.success(`${pendentes.length} tarefas adicionadas ao plano`);
       } else {
         await criarPlano.mutateAsync({
-          titulo: `Plano IA · ${meta?.nome ?? ""}`.trim(),
+          titulo: `Plano IA · ${entrega?.nome ?? ""}`.trim(),
           meta_id: id ?? null,
           tarefas: pendentes.map(({ a }) => ({
             descricao: a.contexto ? `${a.titulo}\n${a.contexto}` : a.titulo,
@@ -138,9 +138,9 @@ export default function AnaliseMetaPage() {
     return (
       <AppShell>
         <div className="metasia-card p-8 text-center">
-          <p className="text-sm text-muted-foreground mb-3">Meta não encontrada.</p>
+          <p className="text-sm text-muted-foreground mb-3">Entrega não encontrada.</p>
           <Button asChild variant="outline">
-            <Link to="/metas">
+            <Link to="/entregas">
               <ArrowLeft className="h-4 w-4 mr-1.5" /> Voltar para metas
             </Link>
           </Button>
@@ -161,7 +161,7 @@ export default function AnaliseMetaPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Button asChild variant="ghost" size="sm" className="-ml-2 h-7 px-2">
-                <Link to="/metas">
+                <Link to="/entregas">
                   <ArrowLeft className="h-3.5 w-3.5 mr-1" />
                   Minhas Metas
                 </Link>
