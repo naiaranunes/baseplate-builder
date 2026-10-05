@@ -86,7 +86,7 @@ export function GoogleSheetsModal({ open, onOpenChange }: Props) {
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium">Não sabe o formato esperado?</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Baixe o modelo .xlsx com as abas <strong>Metas</strong>, <strong>Resultados</strong> e{" "}
+                Baixe o modelo .xlsx com as abas <strong>Entregas</strong>, <strong>Resultados</strong> e{" "}
                 <strong>Instruções</strong>. Preencha, suba no Drive e cole a URL acima.
               </p>
               <Button

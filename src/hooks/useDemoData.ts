@@ -269,7 +269,7 @@ export function useLoadDemoData() {
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["metas"] });
+      qc.invalidateQueries({ queryKey: ["entregas"] });
       qc.invalidateQueries({ queryKey: ["planos"] });
       qc.invalidateQueries({ queryKey: ["demo-status"] });
     },
@@ -287,7 +287,7 @@ export function useClearDemoData() {
       await supabase.from("metas").delete().eq("is_demo", true);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["metas"] });
+      qc.invalidateQueries({ queryKey: ["entregas"] });
       qc.invalidateQueries({ queryKey: ["planos"] });
       qc.invalidateQueries({ queryKey: ["demo-status"] });
     },

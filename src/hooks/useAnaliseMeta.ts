@@ -46,7 +46,7 @@ export function useAnaliseMeta() {
           })),
       }));
 
-      const { data, error } = await supabase.functions.invoke("analise-meta", {
+      const { data, error } = await supabase.functions.invoke("analise-entrega", {
         body: {
           meta_id: meta.id,
           meta_nome: meta.nome,

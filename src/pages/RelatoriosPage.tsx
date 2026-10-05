@@ -73,7 +73,7 @@ function csvEscape(value: unknown): string {
   return s;
 }
 
-function downloadCSV(metas: MetaWithResponsavel[]) {
+function downloadCSV(entregas: MetaWithResponsavel[]) {
   const headers = [
     "Nome",
     "Área",
@@ -90,7 +90,7 @@ function downloadCSV(metas: MetaWithResponsavel[]) {
     "É inversa?",
   ];
 
-  const rows = metas.map((m) => {
+  const rows = entregas.map((m) => {
     const real = Math.round(progressoReal(m.valor_atual, m.valor_alvo, m.is_inverse) * 100);
     return [
       m.nome,
@@ -128,13 +128,13 @@ function initials(name?: string | null) {
 }
 
 export default function RelatoriosPage() {
-  const { data: metas, isLoading } = useMetas();
+  const { data: entregas, isLoading } = useMetas();
   const [area, setArea] = useState<string>("todas");
   const [periodo, setPeriodo] = useState<Periodo>("todos");
   const [status, setStatus] = useState<"todas" | Status>("todas");
 
   const filtered = useMemo(() => {
-    const items = metas ?? [];
+    const items = entregas ?? [];
     const dias = PERIODO_DIAS[periodo];
     return items.filter((m) => {
       if (area !== "todas" && m.area !== area) return false;
@@ -142,7 +142,7 @@ export default function RelatoriosPage() {
       if (!metaIntersectsPeriod(m, dias)) return false;
       return true;
     });
-  }, [metas, area, periodo, status]);
+  }, [entregas, area, periodo, status]);
 
   const summary = useMemo(() => {
     const total = filtered.length;
@@ -178,7 +178,7 @@ export default function RelatoriosPage() {
           <div>
             <h1 className="text-2xl font-bold">Relatórios</h1>
             <p className="text-sm text-muted-foreground">
-              Visão consolidada de todas as metas — {PERIODO_LABEL[periodo].toLowerCase()}.
+              Visão consolidada de todas as entregas — {PERIODO_LABEL[periodo].toLowerCase()}.
             </p>
           </div>
           <Button
@@ -274,10 +274,10 @@ export default function RelatoriosPage() {
               ))}
             </div>
           ) : summary.total === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma meta atende aos filtros atuais.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma entrega atende aos filtros atuais.</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <SummaryStat label="Total de metas" value={`${summary.total}`} color="var(--color-blue)" />
+              <SummaryStat label="Total de entregas" value={`${summary.total}`} color="var(--color-blue)" />
               <SummaryStat
                 label="No prazo"
                 value={`${summary.pctVerde}%`}
@@ -304,7 +304,7 @@ export default function RelatoriosPage() {
         <section className="metasia-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              % de metas saudáveis por área
+              % de entregas saudáveis por área
             </h2>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <BarChart3 className="h-3.5 w-3.5" />
@@ -369,7 +369,7 @@ export default function RelatoriosPage() {
               Tabela consolidada
             </h2>
             <span className="text-xs text-muted-foreground">
-              {filtered.length} {filtered.length === 1 ? "meta" : "metas"}
+              {filtered.length} {filtered.length === 1 ? "entrega" : "entregas"}
             </span>
           </div>
 

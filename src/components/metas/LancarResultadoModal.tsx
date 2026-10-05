@@ -51,7 +51,7 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!selectedMeta) return toast.error("Selecione uma meta.");
+    if (!selectedMeta) return toast.error("Selecione uma entrega.");
     const num = Number(valor.replace(",", "."));
     if (!Number.isFinite(num)) return toast.error("Valor inválido.");
     if (!data) return toast.error("Informe a data do lançamento.");
@@ -68,7 +68,7 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
         result.statusAnterior !== "vermelho" && result.statusNovo === "vermelho";
 
       if (mudouParaVermelho) {
-        toast.warning("Lançamento salvo — esta meta entrou em risco 🚨", {
+        toast.warning("Lançamento salvo — esta entrega entrou em risco 🚨", {
           description: "A IA já está analisando o desvio. Alertas podem ter sido disparados.",
         });
       } else {
@@ -92,7 +92,7 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Meta *</Label>
+            <Label>Entrega *</Label>
             {metaId ? (
               <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
                 {meta?.nome ?? "Carregando…"}
@@ -100,7 +100,7 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
             ) : (
               <Select value={selectedMeta} onValueChange={setSelectedMeta}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma meta…" />
+                  <SelectValue placeholder="Selecione uma entrega…" />
                 </SelectTrigger>
                 <SelectContent>
                   {metas.map((m) => (
@@ -150,7 +150,7 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
               Alvo: {formatValor(meta.valor_alvo, meta.unidade)} · Atual:{" "}
               {formatValor(meta.valor_atual, meta.unidade)}{" "}
               {meta.is_inverse && (
-                <span className="italic">· meta inversa (menor é melhor)</span>
+                <span className="italic">· entrega inversa (menor é melhor)</span>
               )}
             </div>
           )}

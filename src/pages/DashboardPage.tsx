@@ -111,7 +111,7 @@ export default function DashboardPage() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <SummaryCard
-            label="Total de Metas"
+            label="Total de Entregas"
             value={summary.total}
             icon={<Target className="h-4 w-4" />}
             color="var(--color-blue)"
@@ -176,7 +176,7 @@ export default function DashboardPage() {
             </h2>
             {emAtencao.length > 0 && (
               <Link
-                to="/metas"
+                to="/entregas"
                 className="text-xs font-medium hover:underline"
                 style={{ color: "var(--color-blue)" }}
               >
@@ -271,7 +271,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <Button size="sm" variant="ghost" asChild className="h-8">
-                              <Link to={`/metas/${m.id}/analise`}>
+                              <Link to={`/entregas/${m.id}/analise`}>
                                 <Sparkles className="h-3.5 w-3.5 mr-1" />
                                 Análise IA
                               </Link>
@@ -356,7 +356,7 @@ function AreaCard({
 
   return (
     <Link
-      to={`/metas?area=${encodeURIComponent(area)}`}
+      to={`/entregas?area=${encodeURIComponent(area)}`}
       className="metasia-card p-4 block hover:bg-muted/30 transition-colors"
       style={piorStatus === "vermelho" ? { borderLeft: "3px solid var(--color-red)" } : undefined}
     >
@@ -367,7 +367,7 @@ function AreaCard({
             <h3 className="font-semibold text-sm">{area}</h3>
           </div>
           <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            {count} {count === 1 ? "meta" : "metas"}
+            {count} {count === 1 ? "entrega" : "entregas"}
           </div>
         </div>
         <div className="text-right">

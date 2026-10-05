@@ -21,7 +21,7 @@ type Notif = {
 
 function useLatestMetaStatusChanges() {
   return useQuery({
-    queryKey: ["notifications", "metas-recent"],
+    queryKey: ["notifications", "entregas-recent"],
     queryFn: async (): Promise<Notif[]> => {
       const { data, error } = await supabase
         .from("metas")
@@ -94,7 +94,7 @@ export function NotificationsDrawer({
               {notifs.map((n) => (
                 <li key={n.id}>
                   <Link
-                    to={`/metas/${n.id}/analise`}
+                    to={`/entregas/${n.id}/analise`}
                     onClick={() => onOpenChange(false)}
                     className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >

@@ -10,7 +10,7 @@ import type {
   Status,
 } from "@/lib/metas";
 
-const METAS_KEY = ["metas"] as const;
+const METAS_KEY = ["entregas"] as const;
 
 export function useMetas() {
   return useQuery({
@@ -28,7 +28,7 @@ export function useMetas() {
 
 export function useMeta(id: string | undefined) {
   return useQuery({
-    queryKey: ["metas", id],
+    queryKey: ["entregas", id],
     enabled: !!id,
     queryFn: async (): Promise<MetaWithResponsavel | null> => {
       if (!id) return null;
@@ -45,7 +45,7 @@ export function useMeta(id: string | undefined) {
 
 export function useLancamentos(metaId: string | undefined) {
   return useQuery({
-    queryKey: ["metas", metaId, "lancamentos"],
+    queryKey: ["entregas", metaId, "lancamentos"],
     enabled: !!metaId,
     queryFn: async (): Promise<Lancamento[]> => {
       if (!metaId) return [];
@@ -63,7 +63,7 @@ export function useLancamentos(metaId: string | undefined) {
 
 export function useComentarios(metaId: string | undefined) {
   return useQuery({
-    queryKey: ["metas", metaId, "comentarios"],
+    queryKey: ["entregas", metaId, "comentarios"],
     enabled: !!metaId,
     queryFn: async (): Promise<Comentario[]> => {
       if (!metaId) return [];
@@ -144,7 +144,7 @@ export function useUpdateMeta() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: METAS_KEY });
-      qc.invalidateQueries({ queryKey: ["metas", vars.id] });
+      qc.invalidateQueries({ queryKey: ["entregas", vars.id] });
     },
   });
 }
@@ -222,8 +222,8 @@ export function useLancarResultado() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: METAS_KEY });
-      qc.invalidateQueries({ queryKey: ["metas", vars.meta_id] });
-      qc.invalidateQueries({ queryKey: ["metas", vars.meta_id, "lancamentos"] });
+      qc.invalidateQueries({ queryKey: ["entregas", vars.meta_id] });
+      qc.invalidateQueries({ queryKey: ["entregas", vars.meta_id, "lancamentos"] });
     },
   });
 }
@@ -243,7 +243,7 @@ export function useCreateComentario() {
       return data as Comentario;
     },
     onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["metas", vars.metaId, "comentarios"] });
+      qc.invalidateQueries({ queryKey: ["entregas", vars.metaId, "comentarios"] });
     },
   });
 }

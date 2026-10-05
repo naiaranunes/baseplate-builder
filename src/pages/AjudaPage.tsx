@@ -18,7 +18,7 @@ const FAQS: FAQ[] = [
       <>
         No primeiro acesso a plataforma abre o assistente de configuração em 4
         passos: <strong>perfil</strong>, <strong>empresa</strong>,{" "}
-        <strong>notificações no Slack</strong> e <strong>primeira meta</strong>.
+        <strong>notificações no Slack</strong> e <strong>primeira entrega</strong>.
         Você pode pular etapas opcionais e refazer tudo depois em{" "}
         <Link to="/configuracoes/onboarding" className="font-medium" style={blueLink}>
           Configurações → Onboarding
@@ -28,14 +28,14 @@ const FAQS: FAQ[] = [
     ),
   },
   {
-    q: "Como cadastrar uma nova meta?",
+    q: "Como cadastrar uma nova entrega?",
     a: (
       <>
         Vá em{" "}
-        <Link to="/metas" className="font-medium" style={blueLink}>
+        <Link to="/entregas" className="font-medium" style={blueLink}>
           Minhas Metas
         </Link>{" "}
-        e clique em <strong>Nova meta</strong>. Preencha nome, área, responsável,
+        e clique em <strong>Nova entrega</strong>. Preencha nome, área, responsável,
         valor alvo + unidade, periodicidade e a janela de datas. Marque "meta
         inversa" quando menor for melhor (ex: churn, tempo de resposta). O status
         é calculado automaticamente — você não precisa defini-lo manualmente.
@@ -43,7 +43,7 @@ const FAQS: FAQ[] = [
     ),
   },
   {
-    q: "Como lançar um resultado em uma meta?",
+    q: "Como lançar um resultado em uma entrega?",
     a: (
       <>
         Use o botão <strong>Lançar resultado</strong> na sidebar ou abra a meta e
@@ -80,20 +80,20 @@ const FAQS: FAQ[] = [
     ),
   },
   {
-    q: "O que é uma meta inversa?",
+    q: "O que é uma entrega inversa?",
     a: (
       <>
         Meta onde <strong>menor é melhor</strong>. Exemplos: <em>churn</em>,{" "}
         <em>tempo médio de resposta</em>, <em>CAC</em>,{" "}
         <em>custos operacionais</em>. Quando você marca o toggle{" "}
-        <strong>"Meta inversa"</strong> na criação, a barra de progresso e o
+        <strong>"Entrega inversa"</strong> na criação, a barra de progresso e o
         cálculo de status invertem: o objetivo é reduzir o valor até atingir (ou
         ficar abaixo do) valor alvo.
       </>
     ),
   },
   {
-    q: "Como a IA analisa o desempenho da minha meta?",
+    q: "Como a IA analisa o desempenho da minha entrega?",
     a: (
       <>
         Abra a meta em <strong>Análise IA</strong> e clique em{" "}

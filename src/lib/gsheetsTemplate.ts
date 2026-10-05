@@ -23,7 +23,7 @@ export function downloadGSheetsTemplate(filename = "metasia-modelo-sheets.xlsx")
     { wch: 14 },
     { wch: 12 },
   ];
-  XLSX.utils.book_append_sheet(wb, wsMetas, "Metas");
+  XLSX.utils.book_append_sheet(wb, wsMetas, "Entregas");
 
   // --- Aba Resultados ---
   const resultadosRows = [
@@ -46,7 +46,7 @@ export function downloadGSheetsTemplate(filename = "metasia-modelo-sheets.xlsx")
     ["Modelo de planilha — Metasia"],
     [""],
     ["Como usar"],
-    ["1. Preencha a aba 'Metas' com uma linha por meta acompanhada."],
+    ["1. Preencha a aba 'Entregas' com uma linha por entrega acompanhada."],
     ["2. Registre os lançamentos na aba 'Resultados' usando o mesmo meta_id."],
     ["3. Faça upload da planilha no Google Drive."],
     ["4. Compartilhe como 'Qualquer pessoa com o link — Leitor' (ou com o e-mail de serviço da workspace)."],
@@ -56,7 +56,7 @@ export function downloadGSheetsTemplate(filename = "metasia-modelo-sheets.xlsx")
     ["• Não renomeie nem remova abas e colunas — a sincronização depende dos nomes exatos."],
     ["• Datas no formato AAAA-MM-DD (ex: 2026-01-15)."],
     ["• Valores numéricos sem separador de milhar e usando ponto como decimal."],
-    ["• meta_id é o identificador estável que conecta cada lançamento à sua meta."],
+    ["• meta_id é o identificador estável que conecta cada lançamento à sua entrega."],
     ["• is_inverse = TRUE quando 'menor é melhor' (ex: churn, custo, tempo de resposta)."],
     [""],
     ["Dica"],

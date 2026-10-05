@@ -158,7 +158,7 @@ export function BurnUpChart({ meta, lancamentos, previsaoFinal }: Props) {
   return (
     <div className="metasia-card p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold">Trajetória da meta</h3>
+        <h3 className="text-sm font-semibold">Trajetória da entrega</h3>
         <div className="flex gap-3 text-xs">
           <span className="flex items-center gap-1.5">
             <span

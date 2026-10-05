@@ -9,7 +9,7 @@ import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
-  metas: "Minhas Metas",
+  metas: "Minhas Entregas",
   analise: "Análise de Saúde",
   planos: "Planos de Ação",
   relatorios: "Relatórios",

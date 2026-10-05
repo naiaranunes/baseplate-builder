@@ -59,7 +59,7 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const valor = Number(valorAlvo.replace(",", "."));
-    if (!nome.trim()) return toast.error("Informe o nome da meta.");
+    if (!nome.trim()) return toast.error("Informe o nome da entrega.");
     if (!area) return toast.error("Selecione uma área.");
     if (!Number.isFinite(valor) || valor <= 0)
       return toast.error("Valor alvo precisa ser um número positivo.");
@@ -81,11 +81,11 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
         data_fim: dataFim,
         is_inverse: isInverse,
       });
-      toast.success("Meta criada com sucesso");
+      toast.success("Entrega criada com sucesso");
       reset();
       onOpenChange(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao criar meta";
+      const message = err instanceof Error ? err.message : "Erro ao criar entrega";
       toast.error(message);
     }
   };
@@ -94,14 +94,14 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nova meta</DialogTitle>
+          <DialogTitle>Nova entrega</DialogTitle>
           <DialogDescription>
             Defina o alvo, a janela e o responsável. O status será calculado automaticamente.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="nome">Nome da meta *</Label>
+            <Label htmlFor="nome">Nome da entrega *</Label>
             <Input
               id="nome"
               value={nome}
@@ -210,7 +210,7 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
 
           <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
             <div className="space-y-0.5">
-              <Label className="cursor-pointer">Meta inversa (menor é melhor)</Label>
+              <Label className="cursor-pointer">Entrega inversa (menor é melhor)</Label>
               <p className="text-xs text-muted-foreground">
                 Para churn, tempo de resposta, custos, etc.
               </p>
@@ -239,7 +239,7 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
               style={{ backgroundColor: "var(--color-blue)", color: "white" }}
               className="hover:opacity-90"
             >
-              {createMeta.isPending ? "Criando…" : "Criar meta"}
+              {createMeta.isPending ? "Criando…" : "Criar entrega"}
             </Button>
           </DialogFooter>
         </form>
