@@ -78,7 +78,7 @@ export default function AnaliseMetaPage() {
         toast.success("Tarefa adicionada ao plano");
       } else {
         await criarPlano.mutateAsync({
-          titulo: `Plano IA · ${entrega?.nome ?? ""}`.trim(),
+          titulo: `Plano IA · ${meta?.nome ?? ""}`.trim(),
           meta_id: id ?? null,
           tarefas: [{ descricao }],
         });
@@ -110,7 +110,7 @@ export default function AnaliseMetaPage() {
         toast.success(`${pendentes.length} tarefas adicionadas ao plano`);
       } else {
         await criarPlano.mutateAsync({
-          titulo: `Plano IA · ${entrega?.nome ?? ""}`.trim(),
+          titulo: `Plano IA · ${meta?.nome ?? ""}`.trim(),
           meta_id: id ?? null,
           tarefas: pendentes.map(({ a }) => ({
             descricao: a.contexto ? `${a.titulo}\n${a.contexto}` : a.titulo,

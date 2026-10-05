@@ -38,7 +38,7 @@ export function usePlanos() {
       return (planos ?? []).map((p) => ({
         ...(p as Plano),
         meta: p.meta_id
-          ? (metaById.get(p.meta_id) as PlanoWithMeta["entrega"]) ?? null
+          ? (metaById.get(p.meta_id) as PlanoWithMeta["meta"]) ?? null
           : null,
         tarefas: tarefasByPlano.get(p.id) ?? [],
       }));
