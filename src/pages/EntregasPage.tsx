@@ -392,4 +392,3 @@ function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; o
   );
 }
 
-export { PackageCheck };
