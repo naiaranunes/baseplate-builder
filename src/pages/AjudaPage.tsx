@@ -202,7 +202,7 @@ export default function AjudaPage() {
         <div>
           <h1 className="text-2xl font-bold">Ajuda</h1>
           <p className="text-sm text-muted-foreground">
-            Respostas para as dúvidas mais comuns sobre o MetasIA.
+            Respostas para as dúvidas mais comuns sobre o Gestão Wiadupla.
           </p>
         </div>
 

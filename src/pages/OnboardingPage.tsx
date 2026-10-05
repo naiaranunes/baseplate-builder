@@ -210,7 +210,7 @@ export default function OnboardingPage() {
 
   const handleFinish = async () => {
     await completeOnboarding();
-    toast.success("Tudo pronto! Bem-vindo ao MetasIA.");
+    toast.success("Tudo pronto! Bem-vindo ao Gestão Wiadupla.");
     navigate("/dashboard", { replace: true });
   };
 
