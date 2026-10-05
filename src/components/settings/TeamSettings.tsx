@@ -15,7 +15,7 @@ import type { AppRole } from "@/types/auth";
 const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Admin",
   supervisor: "Supervisor",
-  agent: "Agent",
+  agent: "Colaborador",
 };
 
 export default function TeamSettings() {
@@ -48,7 +48,7 @@ export default function TeamSettings() {
               <SelectItem value="all">Todas permissões</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="supervisor">Supervisor</SelectItem>
-              <SelectItem value="agent">Agent</SelectItem>
+              <SelectItem value="agent">Colaborador</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
