@@ -86,7 +86,7 @@ export default function EquipePage() {
           <div>
             <h1 className="text-2xl font-bold">Equipe</h1>
             <p className="text-sm text-muted-foreground">
-              Líder → Liderados → Entregas. {isAdmin ? "Você vê toda a estrutura da organização." : "Você vê apenas os seus liderados."}
+              {isAdmin ? "Você vê toda a estrutura da organização." : "Você vê apenas os seus liderados."}
             </p>
           </div>
           <Button onClick={abrirNovo}><Plus className="h-4 w-4 mr-1.5" />Novo liderado</Button>
@@ -178,8 +178,10 @@ export default function EquipePage() {
           {form && (
             <div className="space-y-3">
               <div><Label>Nome completo</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
+              <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value }) }/></div>
               <div><Label>Cargo/Função</Label><Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} /></div>
               <div>
+
                 <Label>Área/Departamento</Label>
                 <Input list="areas-sugeridas" value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} placeholder="Ex.: Comercial/Vendas" />
                 <datalist id="areas-sugeridas">{areas.map((a) => <option key={a} value={a} />)}</datalist>

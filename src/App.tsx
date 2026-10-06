@@ -7,12 +7,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { supabase } from "@/integrations/supabase/client";
+
 import AuthPage from "./pages/AuthPage";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import DashboardPage from "./pages/DashboardPage";
 import MetasPage from "./pages/MetasPage";
 import AnaliseMetaPage from "./pages/AnaliseMetaPage";
-import PlanosPage from "./pages/PlanosPage";
 import EntregasPage from "./pages/EntregasPage";
 import EquipePage from "@/pages/EquipePage";
 import RelatoriosPage from "./pages/RelatoriosPage";
@@ -35,11 +37,14 @@ const queryClient = new QueryClient({
 function TriggerHealthCheck() {
   useEffect(() => {
     const checked = sessionStorage.getItem("auth_trigger_checked");
+
     if (checked) return;
+
     supabase.functions
       .invoke("ensure-auth-trigger")
       .then(({ data, error }) => {
         sessionStorage.setItem("auth_trigger_checked", "1");
+
         if (error || !(data as { ok?: boolean })?.ok) {
           console.warn(
             "[Auth Setup] Trigger check failed:",
@@ -49,6 +54,7 @@ function TriggerHealthCheck() {
       })
       .catch((err) => console.warn("[Auth Setup]", err));
   }, []);
+
   return null;
 }
 
@@ -57,43 +63,140 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+
       <BrowserRouter>
         <AuthProvider>
           <TriggerHealthCheck />
+
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Página inicial */}
+            <Route
+              path="/"
+              element={<Navigate to="/dashboard" replace />}
+            />
+
+            {/* Autenticação */}
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/pending-approval" element={
-              <ProtectedRoute allowUnapproved><PendingApprovalPage /></ProtectedRoute>
-            } />
-            <Route path="/onboarding" element={
-              <ProtectedRoute><OnboardingPage /></ProtectedRoute>
-            } />
-            <Route path="/dashboard" element={
-              <ProtectedRoute><DashboardPage /></ProtectedRoute>
-            } />
-            <Route path="/entregas" element={
-              <ProtectedRoute><MetasPage /></ProtectedRoute>
-            } />
-            <Route path="/entregas/:id/analise" element={
-              <ProtectedRoute><AnaliseMetaPage /></ProtectedRoute>
-            } />
-            <Route path="/equipe" element={<ProtectedRoute><EquipePage /></ProtectedRoute>} />
-            <Route path="/entregas" element={<ProtectedRoute><EntregasPage /></ProtectedRoute>} />
-            <Route path="/planos" element={
-              <ProtectedRoute><PlanosPage /></ProtectedRoute>
-            } />
-            <Route path="/relatorios" element={
-              <ProtectedRoute><RelatoriosPage /></ProtectedRoute>
-            } />
-            <Route path="/ajuda" element={
-              <ProtectedRoute><AjudaPage /></ProtectedRoute>
-            } />
-            <Route path="/configuracoes/*" element={
-              <ProtectedRoute allowedRoles={["admin"]}><SettingsPage /></ProtectedRoute>
-            } />
-            {/* Legacy alias kept for any in-flight links */}
-            <Route path="/settings/*" element={<Navigate to="/configuracoes" replace />} />
+
+            {/* Recuperação de senha */}
+            <Route
+              path="/forgot-password"
+              element={<ForgotPassword />}
+            />
+
+            <Route
+              path="/reset-password"
+              element={<ResetPassword />}
+            />
+
+            {/* Aprovação de usuário */}
+            <Route
+              path="/pending-approval"
+              element={
+                <ProtectedRoute allowUnapproved>
+                  <PendingApprovalPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Onboarding */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Dashboard */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Entregas / Metas */}
+            <Route
+              path="/entregas"
+              element={
+                <ProtectedRoute>
+                  <MetasPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/entregas/:id/analise"
+              element={
+                <ProtectedRoute>
+                  <AnaliseMetaPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Equipe */}
+            <Route
+              path="/equipe"
+              element={
+                <ProtectedRoute>
+                  <EquipePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Entregas */}
+            <Route
+              path="/entregas"
+              element={
+                <ProtectedRoute>
+                  <EntregasPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Relatórios */}
+            <Route
+              path="/relatorios"
+              element={
+                <ProtectedRoute>
+                  <RelatoriosPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Ajuda */}
+            <Route
+              path="/ajuda"
+              element={
+                <ProtectedRoute>
+                  <AjudaPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Configurações */}
+            <Route
+              path="/configuracoes/*"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Alias antigo para configurações */}
+            <Route
+              path="/settings/*"
+              element={
+                <Navigate to="/configuracoes" replace />
+              }
+            />
+
+            {/* Página não encontrada */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

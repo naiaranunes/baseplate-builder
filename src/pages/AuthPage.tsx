@@ -13,3 +13,4 @@ export default function AuthPage() {
 
   return <AuthLayout />;
 }
+
