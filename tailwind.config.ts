@@ -25,7 +25,7 @@ export default {
         },
         accent: { DEFAULT: "hsl(var(--accent-primary))", hover: "hsl(var(--accent-primary-hover))", light: "hsl(var(--accent-primary-light))", foreground: "hsl(var(--accent-foreground))" },
         warm: { DEFAULT: "hsl(var(--accent-warm))" },
-        // Gestão Wiadupla named colors (use directly as e.g. bg-navy, text-blue, border-green)
+        // Gestão de Entregas Wiadupla named colors (use directly as e.g. bg-navy, text-blue, border-green)
         navy: { DEFAULT: "var(--color-navy)", 2: "var(--color-navy-2)", 3: "var(--color-navy-3)" },
         blue: { DEFAULT: "var(--color-blue)", hover: "var(--color-blue-hover)", soft: "var(--color-blue-soft)" },
         green: { DEFAULT: "var(--color-green)", bg: "var(--color-green-bg)" },

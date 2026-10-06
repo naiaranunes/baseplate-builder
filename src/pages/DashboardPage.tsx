@@ -104,7 +104,7 @@ export default function DashboardPage() {
             className="hover:opacity-90"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Nova meta
+            Nova Entrega
           </Button>
         </div>
 
@@ -147,7 +147,7 @@ export default function DashboardPage() {
         {/* Painel de saúde por área */}
         <section>
           <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
-            Painel de Saúde por Área
+            Painel de Entregas por Área
           </h2>
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

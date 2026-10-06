@@ -62,7 +62,7 @@ export default function MetasPage() {
             className="hover:opacity-90"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Nova meta
+            Nova Entrega
           </Button>
         </div>
 
@@ -218,7 +218,7 @@ function EmptyState({
         <>
           <h2 className="text-lg font-semibold">Nenhuma entrega atende a esses filtros</h2>
           <p className="text-sm text-muted-foreground max-w-md">
-            Ajuste os filtros acima para ver mais resultados ou crie uma nova meta.
+            Ajuste os filtros acima para ver mais resultados ou crie uma nova entrega.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClear}>
@@ -230,7 +230,7 @@ function EmptyState({
               className="hover:opacity-90"
             >
               <Plus className="h-4 w-4 mr-1.5" />
-              Nova meta
+              Nova Entrega
             </Button>
           </div>
         </>

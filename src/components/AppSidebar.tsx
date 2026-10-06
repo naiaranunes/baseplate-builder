@@ -93,7 +93,7 @@ export function AppSidebar({
               onClick={onLancarResultado}
             >
               <Plus className="h-4 w-4" />
-              Lançar resultado
+              Lançar Entrega
             </Button>
           </div>
         )}

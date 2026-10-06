@@ -87,7 +87,7 @@ function buildAlertaBlocks(metas: MetaPayload[]) {
   blocks.push({
     type: "context",
     elements: [
-      { type: "mrkdwn", text: "Enviado por Gestão Wiadupla · acompanhe em /metas/" + meta.id + "/analise" },
+      { type: "mrkdwn", text: "Enviado por Gestão de Entregas  Wiadupla · acompanhe em /metas/" + meta.id + "/analise" },
     ],
   });
 
