@@ -172,7 +172,7 @@ export default function DashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              Metas em Atenção Agora
+              Entregas em Atenção até Agora
             </h2>
             {emAtencao.length > 0 && (
               <Link
@@ -193,7 +193,7 @@ export default function DashboardPage() {
             >
               <div className="mb-2 font-medium">Tudo no prazo 🎉</div>
               <div className="text-muted-foreground">
-                Nenhuma meta em atenção ou risco no momento.
+                Nenhuma Entrega em atenção ou risco no momento.
               </div>
             </div>
           ) : (

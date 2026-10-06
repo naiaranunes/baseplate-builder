@@ -79,7 +79,7 @@ export function AppSidebar({
               Gestão <span style={{ color: "var(--color-blue-hover)" }}>Wiadupla</span>
             </div>
             <div className="text-[10px] uppercase tracking-widest text-[hsl(var(--sidebar-foreground))]/55 mt-1">
-              Gestão de metas & resultados
+              Gestão de Entregas & resultados
             </div>
           </div>
         )}
