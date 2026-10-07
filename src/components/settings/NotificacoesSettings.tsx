@@ -33,7 +33,6 @@ const CANAL_LABEL: Record<string, string> = {
 const EVENTO_LABEL: Record<string, string> = {
   meta_risco: "Entrega em risco",
   meta_criada: "Nova entrega",
-  plano_criado: "Plano criado",
   resumo_semanal: "Resumo semanal",
   custom: "Personalizado",
 };
