@@ -11,7 +11,6 @@ const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
   metas: "Minhas Entregas",
   analise: "Análise de Saúde",
-  planos: "Planos de Ação",
   relatorios: "Relatórios",
   ajuda: "Ajuda",
   configuracoes: "Configurações",

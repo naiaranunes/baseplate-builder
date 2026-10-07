@@ -45,7 +45,6 @@ export function AppSidebar({
     { title: "Equipe", url: "/equipe", icon: Users },
     { title: "Agenda de Entregas", url: "/entregas", icon: PackageCheck },
     { title: "Minhas Entregas", url: "/entregas", icon: Target },
-    { title: "Planos de Ação", url: "/planos", icon: ListChecks },
     { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
   ];
 

@@ -70,29 +70,18 @@ const App = () => (
 
           <Routes>
             {/* Página inicial */}
-            <Route
-              path="/"
-              element={<Navigate to="/dashboard" replace />}
-            />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
             {/* Autenticação */}
             <Route path="/auth" element={<AuthPage />} />
 
             {/* Recuperação de senha */}
-            <Route
-              path="/forgot-password"
-              element={<ForgotPassword />}
-            />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            <Route
-              path="/reset-password"
-              element={<ResetPassword />}
-            />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Aprovação de usuário */}
-            <Route
-              path="/pending-approval"
-              element={
+            <Route path="/pending-approval" element={
                 <ProtectedRoute allowUnapproved>
                   <PendingApprovalPage />
                 </ProtectedRoute>
@@ -191,9 +180,7 @@ const App = () => (
             {/* Alias antigo para configurações */}
             <Route
               path="/settings/*"
-              element={
-                <Navigate to="/configuracoes" replace />
-              }
+              element={<Navigate to="/configuracoes" replace />}
             />
 
             {/* Página não encontrada */}
