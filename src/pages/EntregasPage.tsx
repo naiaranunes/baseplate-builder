@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   type Entrega, type Liderado, useAddComentario, useCreateEntrega, useEntregas, useExcluirEntrega, useExcluirLiderado,
   useHistorico, useLiderados, useMembros, useRegistrarRealizacao, useSalvarLiderado, useUpdateStatus,
@@ -36,6 +37,7 @@ function StatusBadge({ e }: { e: Entrega }) {
 export default function EntregasPage() {
   const { data: entregas, isLoading } = useEntregas();
   const { data: liderados } = useLiderados();
+  const { user, isAdmin, isSupervisor } = useAuth();
   const [novoOpen, setNovoOpen] = useState(false);
   const [selecionada, setSelecionada] = useState<Entrega | null>(null);
   const [pessoa, setPessoa] = useState("todos");
@@ -45,7 +47,11 @@ export default function EntregasPage() {
     return (id: string | null) => (id && m.get(id)) || "—";
   }, [liderados]);
 
-  const todas = (entregas ?? []).filter((e) => pessoa === "todos" || e.liderado_cadastro_id === pessoa);
+  // Colaborador (sem papel de líder) vê apenas as tarefas atribuídas a ele.
+  const isLider = isAdmin || isSupervisor;
+  const meusIds = new Set((liderados ?? []).filter((l) => (l.email ?? "").toLowerCase() === (user?.email ?? "").toLowerCase()).map((l) => l.id));
+  const visiveis = isLider ? (entregas ?? []) : (entregas ?? []).filter((e) => e.liderado_cadastro_id && meusIds.has(e.liderado_cadastro_id));
+  const todas = visiveis.filter((e) => pessoa === "todos" || e.liderado_cadastro_id === pessoa);
 
   return (
     <AppShell>
@@ -254,12 +260,26 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
   const [prazo, setPrazo] = useState("");
   const [periodicidade, setPeriodicidade] = useState<Periodicidade>("unica");
 
+  const [email, setEmail] = useState("");
+  const salvarLiderado = useSalvarLiderado();
+  const escolherLiderado = (id: string) => { setLiderado(id); setEmail(liderados.find((l) => l.id === id)?.email ?? ""); };
+
   const salvar = async () => {
     if (!titulo || !liderado || !prazo) return toast.error("Preencha liderado, entrega e prazo.");
+    const mail = email.trim().toLowerCase();
+    if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return toast.error("E-mail inválido.");
     try {
+      const atual = liderados.find((l) => l.id === liderado);
+      if (mail && atual && (atual.email ?? "").toLowerCase() !== mail) {
+        await salvarLiderado.mutateAsync({ id: liderado, nome: atual.nome, email: mail });
+      }
       await create.mutateAsync({ titulo, descricao: descricao || undefined, liderado_cadastro_id: liderado, prazo, periodicidade });
-      toast.success("Entrega agendada.");
-      setTitulo(""); setDescricao(""); setPrazo(""); setPeriodicidade("unica");
+      if (mail) {
+        const { data, error } = await supabase.functions.invoke("convidar-colaborador", { body: { liderado_id: liderado, redirect_to: window.location.origin } });
+        if (error || data?.error) toast.error("Entrega agendada, mas o convite falhou: " + (data?.error ?? error?.message));
+        else toast.success(data?.status === "ja_cadastrado" ? "Entrega agendada. O colaborador já tem acesso e verá a tarefa." : "Entrega agendada e convite enviado por e-mail.");
+      } else toast.success("Entrega agendada.");
+      setTitulo(""); setDescricao(""); setPrazo(""); setPeriodicidade("unica"); setEmail(""); setLiderado("");
       onOpenChange(false);
     } catch (e) { toast.error((e as Error).message); }
   };
@@ -270,11 +290,15 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
         <DialogHeader><DialogTitle>Nova entrega</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div><Label>Liderado *</Label>
-            <Select value={liderado} onValueChange={setLiderado}>
+            <Select value={liderado} onValueChange={escolherLiderado}>
               <SelectTrigger><SelectValue placeholder="Quem deve entregar" /></SelectTrigger>
               <SelectContent>{liderados.map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          {liderado && <div><Label>E-mail do colaborador (convite de acesso)</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@empresa.com" />
+            <p className="text-xs text-muted-foreground mt-1">O colaborador recebe um convite por e-mail, acessa o sistema e vê as tarefas atribuídas a ele.</p>
+          </div>}
           <div><Label>Entrega *</Label><Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Relatório de vendas" /></div>
           <div><Label>Descrição</Label><Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
