@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import type { MetaWithResponsavel } from "@/lib/metas";
@@ -24,6 +24,6 @@ describe("Análise sem Plano de Ação", () => {
       body: expect.objectContaining({ meta_id: "entrega-1", historico: [] }),
     });
     expect(mocks.invoke.mock.calls[0][1].body).not.toHaveProperty("planos");
-    expect(hook.result.current.data).toEqual(result);
+    await waitFor(() => expect(hook.result.current.data).toEqual(result));
   });
 });
