@@ -29,6 +29,13 @@
       "when": 1791204295322,
       "tag": "0003_liderados_admin_insert",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791400635268,
+      "tag": "0004_liderado_self_read",
+      "breakpoints": true
     }
   ]
 }
