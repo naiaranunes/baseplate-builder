@@ -6,8 +6,6 @@ export type MetaUpdate = Database["public"]["Tables"]["metas"]["Update"];
 export type MetaWithResponsavel = Database["public"]["Views"]["metas_with_responsavel"]["Row"];
 export type Lancamento = Database["public"]["Tables"]["meta_lancamentos"]["Row"];
 export type Comentario = Database["public"]["Tables"]["meta_comentarios"]["Row"];
-export type Plano = Database["public"]["Tables"]["planos_acao"]["Row"];
-export type Tarefa = Database["public"]["Tables"]["plano_tarefas"]["Row"];
 export type AppSettings = Database["public"]["Tables"]["app_settings"]["Row"];
 
 export type Status = "verde" | "amarelo" | "vermelho";

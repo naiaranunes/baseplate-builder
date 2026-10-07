@@ -41,7 +41,6 @@ const CANAIS = [
 const EVENTOS = [
   { value: "meta_risco", label: "Entrega em risco" },
   { value: "meta_criada", label: "Nova entrega criada" },
-  { value: "plano_criado", label: "Plano de ação adicionado" },
   { value: "resumo_semanal", label: "Resumo semanal" },
   { value: "custom", label: "Personalizado" },
 ];
