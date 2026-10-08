@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CheckCircle2, PackageCheck, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -33,12 +34,28 @@ function StatusBadge({ e }: { e: Entrega }) {
   return <Badge variant={STATUS_VARIANT[s]}>{STATUS_LABEL[s]}</Badge>;
 }
 
-export default function EntregasPage() {
+export default function EntregasPage({ mode }: { mode: "agenda" | "mine" }) {
+  const isMine = mode === "mine";
+  const { isAdmin, isSupervisor } = useAuth();
+  const canManage = isAdmin || isSupervisor;
   const { data: entregas, isLoading } = useEntregas();
-  const { data: liderados } = useLiderados();
+  const {
+    data: liderados,
+    isLoading: loadingLiderados,
+    isError: errorLiderados,
+    error: lideradosError,
+  } = useLiderados();
   const [novoOpen, setNovoOpen] = useState(false);
   const [selecionada, setSelecionada] = useState<Entrega | null>(null);
   const [pessoa, setPessoa] = useState("todos");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const entregaId = searchParams.get("entrega");
+    if (!entregaId || !entregas) return;
+    const found = entregas.find((entrega) => entrega.id === entregaId);
+    if (found) setSelecionada(found);
+  }, [entregas, searchParams]);
 
   const nomeLiderado = useMemo(() => {
     const m = new Map((liderados ?? []).map((l) => [l.id, l.nome]));
@@ -52,45 +69,128 @@ export default function EntregasPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">Agenda de Entregas</h1>
-            <p className="text-sm text-muted-foreground">O que cada pessoa deve entregar, quando, se entregou e qual a situação.</p>
+            <h1 className="text-2xl font-bold">{isMine ? "Minhas Entregas" : "Agenda de Entregas"}</h1>
+            <p className="text-sm text-muted-foreground">
+              {isMine
+                ? "Acompanhe os prazos e registre a realização das entregas atribuídas a você."
+                : "Acompanhe as entregas atribuídas à equipe e seus prazos."}
+            </p>
           </div>
-          <div className="flex gap-2">
-            <Select value={pessoa} onValueChange={setPessoa}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os liderados</SelectItem>
-                {(liderados ?? []).map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Button onClick={() => (liderados?.length ? setNovoOpen(true) : toast.error("Cadastre um liderado primeiro."))}>
-              <Plus className="h-4 w-4 mr-1.5" />Nova entrega
-            </Button>
-          </div>
-        </div>
-
-        <Tabs defaultValue="agenda">
-          <TabsList>
-            <TabsTrigger value="agenda">Agenda</TabsTrigger>
-            <TabsTrigger value="reuniao">Visão para reunião</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
-            <TabsTrigger value="liderados">Liderados</TabsTrigger>
-          </TabsList>
-
-          {isLoading ? <Skeleton className="h-48 w-full mt-4" /> : (
-            <>
-              <TabsContent value="agenda"><Agenda entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
-              <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => pessoa === "todos" || l.id === pessoa)} /></TabsContent>
-              <TabsContent value="historico"><HistoricoGeral entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
-              <TabsContent value="liderados"><LideradosTab liderados={liderados ?? []} entregas={entregas ?? []} /></TabsContent>
-            </>
+          {!isMine && canManage && (
+            <div className="flex gap-2">
+              <Select value={pessoa} onValueChange={setPessoa}>
+                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os colaboradores</SelectItem>
+                  {(liderados ?? []).map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button
+                disabled={loadingLiderados || errorLiderados}
+                onClick={() => (liderados?.some((l) => l.ativo) ? setNovoOpen(true) : toast.error("Cadastre um colaborador ativo primeiro."))}
+              >
+                <Plus className="h-4 w-4 mr-1.5" />Nova entrega
+              </Button>
+            </div>
           )}
-        </Tabs>
+        </div>
+        {errorLiderados && canManage && (
+          <p role="alert" className="text-sm text-destructive">
+            Não foi possível carregar os colaboradores: {lideradosError.message}
+          </p>
+        )}
+
+        {isMine ? (
+          isLoading
+            ? <Skeleton className="h-48 w-full mt-4" />
+            : <MinhasEntregas entregas={todas} onOpen={setSelecionada} />
+        ) : (
+          <Tabs defaultValue="agenda">
+            <TabsList>
+              <TabsTrigger value="agenda">Agenda</TabsTrigger>
+              <TabsTrigger value="reuniao">Visão para reunião</TabsTrigger>
+              <TabsTrigger value="historico">Histórico</TabsTrigger>
+              <TabsTrigger value="liderados">Colaboradores</TabsTrigger>
+            </TabsList>
+
+            {isLoading ? <Skeleton className="h-48 w-full mt-4" /> : (
+              <>
+                <TabsContent value="agenda"><Agenda entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
+                <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => pessoa === "todos" || l.id === pessoa)} /></TabsContent>
+                <TabsContent value="historico"><HistoricoGeral entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
+                <TabsContent value="liderados"><LideradosTab liderados={(liderados ?? []).filter((l) => l.ativo)} entregas={entregas ?? []} /></TabsContent>
+              </>
+            )}
+          </Tabs>
+        )}
       </div>
 
-      <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo)} />
-      <DetalheEntrega entrega={selecionada} onClose={() => setSelecionada(null)} nome={nomeLiderado} />
+      {canManage && (
+        <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo)} />
+      )}
+      <DetalheEntrega
+        entrega={selecionada}
+        onClose={() => {
+          setSelecionada(null);
+          if (searchParams.has("entrega")) setSearchParams({}, { replace: true });
+        }}
+        nome={nomeLiderado}
+        canManage={canManage}
+        isMine={isMine}
+      />
     </AppShell>
+  );
+}
+
+function MinhasEntregas({ entregas, onOpen }: { entregas: Entrega[]; onOpen: (entrega: Entrega) => void }) {
+  if (entregas.length === 0) {
+    return <div className="metasia-card mt-4 p-8 text-center text-sm text-muted-foreground">Você ainda não tem entregas atribuídas.</div>;
+  }
+
+  return (
+    <div className="metasia-card mt-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="text-left text-muted-foreground border-b">
+          <tr>
+            <th className="p-3">Entrega</th>
+            <th className="p-3">Periodicidade</th>
+            <th className="p-3">Prazo</th>
+            <th className="p-3">Realizada em</th>
+            <th className="p-3">Situação</th>
+            <th className="p-3 text-right">Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entregas.map((entrega) => (
+            <tr
+              key={entrega.id}
+              className="border-b last:border-0 cursor-pointer hover:bg-muted/50"
+              onClick={() => onOpen(entrega)}
+            >
+              <td className="p-3 font-medium">{entrega.titulo}</td>
+              <td className="p-3">{PERIODICIDADE_LABEL[entrega.periodicidade]}</td>
+              <td className="p-3">{fmt(entrega.prazo)}</td>
+              <td className="p-3">{entrega.data_realizacao ? fmt(entrega.data_realizacao) : "—"}</td>
+              <td className="p-3"><StatusBadge e={entrega} /></td>
+              <td className="p-3 text-right">
+                {!isConcluida(entrega.status) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onOpen(entrega);
+                    }}
+                  >
+                    Registrar
+                  </Button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -100,7 +200,7 @@ function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="text-left text-muted-foreground border-b">
-          <tr><th className="p-3">Liderado</th><th className="p-3">Entrega</th><th className="p-3">Periodicidade</th><th className="p-3">Prazo</th><th className="p-3">Realizada em</th><th className="p-3">Situação</th></tr>
+          <tr><th className="p-3">Colaborador</th><th className="p-3">Entrega</th><th className="p-3">Periodicidade</th><th className="p-3">Prazo</th><th className="p-3">Realizada em</th><th className="p-3">Situação</th></tr>
         </thead>
         <tbody>
           {itens.map((e) => (
@@ -163,7 +263,7 @@ function Reuniao({ entregas, liderados }: { entregas: Entrega[]; liderados: Lide
       <div className="metasia-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-muted-foreground border-b">
-            <tr><th className="p-3">Liderado</th><th className="p-3">Previstas</th><th className="p-3">Atrasadas</th><th className="p-3">Realizadas</th><th className="p-3">Realizadas no prazo</th><th className="p-3">Pendências</th></tr>
+            <tr><th className="p-3">Colaborador</th><th className="p-3">Previstas</th><th className="p-3">Atrasadas</th><th className="p-3">Realizadas</th><th className="p-3">Realizadas no prazo</th><th className="p-3">Pendências</th></tr>
           </thead>
           <tbody>
             {linhas.map((r) => (
@@ -196,15 +296,17 @@ function LideradosTab({ liderados, entregas }: { liderados: Liderado[]; entregas
 
   const onSalvar = async () => {
     if (!edit?.nome?.trim()) return toast.error("Informe o nome.");
+    const email = edit.email?.trim().toLowerCase() ?? "";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Informe um e-mail válido para o colaborador.");
     try {
-      await salvar.mutateAsync({ id: edit.id, nome: edit.nome.trim(), cargo: edit.cargo || null, email: edit.email || null, ativo: edit.ativo ?? true });
-      toast.success("Liderado salvo."); setEdit(null);
+      await salvar.mutateAsync({ id: edit.id, nome: edit.nome.trim(), cargo: edit.cargo || null, email, ativo: edit.ativo ?? true });
+      toast.success("Colaborador salvo."); setEdit(null);
     } catch (e) { toast.error((e as Error).message); }
   };
 
   return (
     <div className="space-y-3 mt-4">
-      <Button onClick={() => setEdit({ ativo: true })}><Users className="h-4 w-4 mr-1.5" />Cadastrar liderado</Button>
+      <Button onClick={() => setEdit({ ativo: true })}><Users className="h-4 w-4 mr-1.5" />Cadastrar colaborador</Button>
       <div className="metasia-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-muted-foreground border-b"><tr><th className="p-3">Nome</th><th className="p-3">Cargo</th><th className="p-3">E-mail</th><th className="p-3">Entregas</th><th className="p-3">Situação</th><th /></tr></thead>
@@ -220,18 +322,18 @@ function LideradosTab({ liderados, entregas }: { liderados: Liderado[]; entregas
                 </td>
               </tr>
             ))}
-            {!liderados.length && <tr><td className="p-4 text-muted-foreground" colSpan={6}>Nenhum liderado cadastrado.</td></tr>}
+            {!liderados.length && <tr><td className="p-4 text-muted-foreground" colSpan={6}>Nenhum colaborador cadastrado.</td></tr>}
           </tbody>
         </table>
       </div>
 
       <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{edit?.id ? "Editar liderado" : "Cadastrar liderado"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{edit?.id ? "Editar colaborador" : "Cadastrar colaborador"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Nome *</Label><Input value={edit?.nome ?? ""} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></div>
             <div><Label>Cargo</Label><Input value={edit?.cargo ?? ""} onChange={(e) => setEdit({ ...edit, cargo: e.target.value })} /></div>
-            <div><Label>E-mail</Label><Input type="email" value={edit?.email ?? ""} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
+            <div><Label>E-mail *</Label><Input type="email" required value={edit?.email ?? ""} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
             <div><Label>Situação</Label>
               <Select value={edit?.ativo === false ? "inativo" : "ativo"} onValueChange={(v) => setEdit({ ...edit, ativo: v === "ativo" })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -255,7 +357,7 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
   const [periodicidade, setPeriodicidade] = useState<Periodicidade>("unica");
 
   const salvar = async () => {
-    if (!titulo || !liderado || !prazo) return toast.error("Preencha liderado, entrega e prazo.");
+    if (!titulo || !liderado || !prazo) return toast.error("Preencha colaborador, entrega e prazo.");
     try {
       await create.mutateAsync({ titulo, descricao: descricao || undefined, liderado_cadastro_id: liderado, prazo, periodicidade });
       toast.success("Entrega agendada.");
@@ -269,10 +371,14 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
       <DialogContent>
         <DialogHeader><DialogTitle>Nova entrega</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>Liderado *</Label>
+          <div><Label>Colaborador *</Label>
             <Select value={liderado} onValueChange={setLiderado}>
               <SelectTrigger><SelectValue placeholder="Quem deve entregar" /></SelectTrigger>
-              <SelectContent>{liderados.map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}</SelectContent>
+              <SelectContent>
+                {liderados.length
+                  ? liderados.map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)
+                  : <SelectItem value="__empty__" disabled>Nenhum colaborador ativo cadastrado.</SelectItem>}
+              </SelectContent>
             </Select>
           </div>
           <div><Label>Entrega *</Label><Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Relatório de vendas" /></div>
@@ -294,7 +400,19 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
   );
 }
 
-function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; onClose: () => void; nome: (id: string | null) => string }) {
+function DetalheEntrega({
+  entrega,
+  onClose,
+  nome,
+  canManage,
+  isMine,
+}: {
+  entrega: Entrega | null;
+  onClose: () => void;
+  nome: (id: string | null) => string;
+  canManage: boolean;
+  isMine: boolean;
+}) {
   const { user } = useAuth();
   const { data: membros } = useMembros();
   const { data: historico } = useHistorico(entrega?.id);
@@ -337,7 +455,7 @@ function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; o
             <div className="space-y-4 mt-4 text-sm">
               {entrega.descricao && <p className="text-muted-foreground">{entrega.descricao}</p>}
               <div className="grid grid-cols-2 gap-2">
-                <div><span className="text-muted-foreground">Liderado:</span> {nome(entrega.liderado_cadastro_id)}</div>
+                {!isMine && <div><span className="text-muted-foreground">Colaborador:</span> {nome(entrega.liderado_cadastro_id)}</div>}
                 <div><span className="text-muted-foreground">Prazo:</span> {fmt(entrega.prazo)}</div>
                 <div><span className="text-muted-foreground">Periodicidade:</span> {PERIODICIDADE_LABEL[entrega.periodicidade]}</div>
                 <div><StatusBadge e={entrega} /></div>
@@ -354,13 +472,15 @@ function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; o
                 </div>
               )}
 
-              <div>
-                <Label>Alterar situação</Label>
-                <Select value={entrega.status} onValueChange={(v) => mudarStatus(v as EntregaStatus)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUS_OPCOES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
+              {canManage && (
+                <div>
+                  <Label>Alterar situação</Label>
+                  <Select value={entrega.status} onValueChange={(v) => mudarStatus(v as EntregaStatus)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{STATUS_OPCOES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Comentário / cobrança</Label>
@@ -381,9 +501,11 @@ function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; o
                 </ul>
               </div>
 
-              <Button variant="ghost" className="text-destructive" onClick={async () => { if (confirm("Excluir esta entrega?")) { await excluir.mutateAsync(entrega.id); fechar(); } }}>
-                <Trash2 className="h-4 w-4 mr-1.5" />Excluir entrega
-              </Button>
+              {canManage && (
+                <Button variant="ghost" className="text-destructive" onClick={async () => { if (confirm("Excluir esta entrega?")) { await excluir.mutateAsync(entrega.id); fechar(); } }}>
+                  <Trash2 className="h-4 w-4 mr-1.5" />Excluir entrega
+                </Button>
+              )}
             </div>
           </>
         )}
@@ -391,4 +513,3 @@ function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; o
     </Sheet>
   );
 }
-

@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,6 +14,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import DashboardPage from "./pages/DashboardPage";
+import ColaboradorDashboardPage from "./pages/ColaboradorDashboardPage";
 import MetasPage from "./pages/MetasPage";
 import AnaliseMetaPage from "./pages/AnaliseMetaPage";
 import EntregasPage from "./pages/EntregasPage";
@@ -33,6 +35,40 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function HomeRedirect() {
+  const { role, isLoading } = useAuth();
+  if (isLoading) return null;
+  return <Navigate to="/dashboard" replace />;
+}
+
+function LegacyDeliveriesRedirect() {
+  const { role, isLoading } = useAuth();
+  if (isLoading) return null;
+  return <Navigate to={role === "agent" ? "/minhas-entregas" : "/agenda-entregas"} replace />;
+}
+
+function LegacyMetasRedirect() {
+  const { role, isLoading } = useAuth();
+  const { search } = useLocation();
+  if (isLoading) return null;
+  return (
+    <Navigate
+      to={`${role === "agent" ? "/minhas-entregas" : "/gestao-entregas"}${role === "agent" ? "" : search}`}
+      replace
+    />
+  );
+}
+
+function LegacyMetaAnalysisRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/entregas/${id}/analise`} replace />;
+}
+
+function RoleDashboardPage() {
+  const { role } = useAuth();
+  return role === "agent" ? <ColaboradorDashboardPage /> : <DashboardPage />;
+}
 
 function TriggerHealthCheck() {
   useEffect(() => {
@@ -70,7 +106,7 @@ const App = () => (
 
           <Routes>
             {/* Página inicial */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<HomeRedirect />} />
 
             {/* Autenticação */}
             <Route path="/auth" element={<AuthPage />} />
@@ -92,7 +128,7 @@ const App = () => (
             <Route
               path="/onboarding"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
                   <OnboardingPage />
                 </ProtectedRoute>
               }
@@ -103,17 +139,24 @@ const App = () => (
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <DashboardPage />
+                  <RoleDashboardPage />
                 </ProtectedRoute>
               }
             />
 
-            {/* Entregas / Metas */}
-            <Route
-              path="/entregas"
-              element={
-                <ProtectedRoute>
+            <Route path="/gestao-entregas" element={
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
                   <MetasPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/entregas" element={<LegacyDeliveriesRedirect />} />
+            <Route path="/metas" element={<LegacyMetasRedirect />} />
+            <Route
+              path="/metas/:id/analise"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
+                  <LegacyMetaAnalysisRedirect />
                 </ProtectedRoute>
               }
             />
@@ -121,7 +164,7 @@ const App = () => (
             <Route
               path="/entregas/:id/analise"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
                   <AnaliseMetaPage />
                 </ProtectedRoute>
               }
@@ -131,18 +174,26 @@ const App = () => (
             <Route
               path="/equipe"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
                   <EquipePage />
                 </ProtectedRoute>
               }
             />
 
-            {/* Entregas */}
             <Route
-              path="/entregas"
+              path="/agenda-entregas"
               element={
-                <ProtectedRoute>
-                  <EntregasPage />
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
+                  <EntregasPage mode="agenda" />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/minhas-entregas"
+              element={
+                <ProtectedRoute allowedRoles={["agent"]}>
+                  <EntregasPage mode="mine" />
                 </ProtectedRoute>
               }
             />
@@ -151,7 +202,7 @@ const App = () => (
             <Route
               path="/relatorios"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
                   <RelatoriosPage />
                 </ProtectedRoute>
               }
@@ -163,6 +214,15 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <AjudaPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/perfil"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage profileOnly />
                 </ProtectedRoute>
               }
             />

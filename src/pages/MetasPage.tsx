@@ -51,9 +51,9 @@ export default function MetasPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">Minhas Entregas</h1>
+            <h1 className="text-2xl font-bold">Entregas</h1>
             <p className="text-sm text-muted-foreground">
-              {metas?.length ?? 0} {metas?.length === 1 ? "entrega" : "entregas"} cadastradas
+              {metas?.length ?? 0} {metas?.length === 1 ? "entrega cadastrada" : "entregas cadastradas"}
             </p>
           </div>
           <Button
@@ -238,7 +238,7 @@ function EmptyState({
         <>
           <h2 className="text-lg font-semibold">Nenhuma entrega cadastrada ainda</h2>
           <p className="text-sm text-muted-foreground max-w-md">
-            Crie sua primeira meta para começar a acompanhar resultados, lançar entregas e
+            Crie sua primeira entrega para começar a acompanhar resultados, lançar resultados e
             receber análises de saúde com IA.
           </p>
           <Button
@@ -247,7 +247,7 @@ function EmptyState({
             className="hover:opacity-90"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Criar primeira meta
+            Criar primeira Entrega
           </Button>
         </>
       )}

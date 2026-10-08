@@ -19,11 +19,24 @@ vi.mock("@/hooks/useOnboarding", () => ({
   },
 }));
 
+vi.mock("@/hooks/useMetas", () => ({
+  useMetas: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useMembros: () => ({ data: [], isLoading: false }),
+}));
+
+vi.mock("@/components/metas/NovaMetaModal", () => ({
+  NovaMetaModal: () => null,
+}));
+
 describe("DashboardPage", () => {
   it("permite acessar o dashboard sem consultar ou bloquear por onboarding", () => {
     render(<DashboardPage />);
 
-    expect(screen.getByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
-    expect(screen.getByText(/Bem-vindo, Ana!/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^(Bom dia|Boa tarde|Boa noite), Ana/ })).toBeInTheDocument();
   });
 });

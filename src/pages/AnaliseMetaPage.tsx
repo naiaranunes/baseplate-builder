@@ -85,9 +85,9 @@ export default function AnaliseMetaPage() {
           </p>
 
           <Button asChild variant="outline">
-            <Link to="/entregas">
+            <Link to="/gestao-entregas">
               <ArrowLeft className="h-4 w-4 mr-1.5" />
-              Voltar para metas
+              Voltar para entregas
             </Link>
           </Button>
         </div>
@@ -123,9 +123,9 @@ export default function AnaliseMetaPage() {
                 size="sm"
                 className="-ml-2 h-7 px-2"
               >
-                <Link to="/entregas">
+                <Link to="/gestao-entregas">
                   <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-                  Minhas Metas
+                  Entregas
                 </Link>
               </Button>
 
@@ -350,7 +350,7 @@ export default function AnaliseMetaPage() {
                               color: "var(--color-green)",
                             }}
                           >
-                            Previsão: vai bater a meta
+                            Previsão: entrega no prazo
                           </span>
                         </>
                       ) : (
@@ -368,7 +368,7 @@ export default function AnaliseMetaPage() {
                               color: "var(--color-red)",
                             }}
                           >
-                            Previsão: não bate a meta
+                            Previsão: entrega em risco
                           </span>
                         </>
                       )}
@@ -638,7 +638,7 @@ function ComentariosSection({
       ) : (
         <p className="text-sm text-muted-foreground">
           Nenhum comentário ainda. Seja o primeiro a
-          registrar contexto sobre esta meta.
+          registrar contexto sobre esta entrega.
         </p>
       )}
 

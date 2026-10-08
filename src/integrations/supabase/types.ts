@@ -208,6 +208,7 @@ export type Database = {
           gestor_id: string
           id: string
           nome: string
+          usuario_id: string | null
           updated_at: string
         }
         Insert: {
@@ -219,6 +220,7 @@ export type Database = {
           gestor_id?: string
           id?: string
           nome: string
+          usuario_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -230,6 +232,7 @@ export type Database = {
           gestor_id?: string
           id?: string
           nome?: string
+          usuario_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -629,7 +632,16 @@ export type Database = {
         }
         Returns: string
       }
+      admin_set_user_role: {
+        Args: { p_role: Database["public"]["Enums"]["app_role"]; p_user_id: string }
+        Returns: undefined
+      }
+      admin_set_user_status: {
+        Args: { p_is_active: boolean; p_is_approved: boolean; p_user_id: string }
+        Returns: undefined
+      }
       ensure_auth_trigger: { Args: never; Returns: Json }
+      claim_my_liderado: { Args: never; Returns: boolean }
       get_handle_new_user_def: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -654,6 +666,10 @@ export type Database = {
         }[]
       }
       read_vault_secret: { Args: { p_key: string }; Returns: string }
+      registrar_realizacao_entrega: {
+        Args: { p_data: string; p_entrega_id: string; p_observacao?: string | null }
+        Returns: string | null
+      }
       store_vault_secret: {
         Args: { p_key: string; p_value: string }
         Returns: string

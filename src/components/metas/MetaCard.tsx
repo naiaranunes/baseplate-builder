@@ -126,7 +126,7 @@ export function MetaCard({ meta, defaultOpen, onLancarResultado, onVerHistorico 
               Ver histórico
             </Button>
             <Button size="sm" variant="outline" asChild>
-              <Link to={`/metas/${meta.id}/analise`}>
+              <Link to={`/entregas/${meta.id}/analise`}>
                 <Sparkles className="h-4 w-4 mr-1.5" />
                 Análise IA
               </Link>

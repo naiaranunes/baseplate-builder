@@ -157,7 +157,7 @@ export default function DashboardPage() {
             </div>
           ) : areaCards.length === 0 ? (
             <div className="metasia-card p-8 text-center text-sm text-muted-foreground">
-              Crie suas primeiras metas para ver o painel de saúde por área.
+              Cadastre suas primeiras entregas para ver o painel por área.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -176,7 +176,7 @@ export default function DashboardPage() {
             </h2>
             {emAtencao.length > 0 && (
               <Link
-                to="/entregas"
+                to="/gestao-entregas"
                 className="text-xs font-medium hover:underline"
                 style={{ color: "var(--color-blue)" }}
               >
@@ -203,7 +203,7 @@ export default function DashboardPage() {
                   <thead className="bg-muted/40 text-left">
                     <tr>
                       <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                        Meta
+                        Entrega
                       </th>
                       <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
                         Responsável
@@ -356,7 +356,7 @@ function AreaCard({
 
   return (
     <Link
-      to={`/entregas?area=${encodeURIComponent(area)}`}
+      to={`/gestao-entregas?area=${encodeURIComponent(area)}`}
       className="metasia-card p-4 block hover:bg-muted/30 transition-colors"
       style={piorStatus === "vermelho" ? { borderLeft: "3px solid var(--color-red)" } : undefined}
     >

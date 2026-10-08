@@ -4,13 +4,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 
 export default function AuthPage() {
-  const { user, isApproved } = useAuth();
+  const { user, isApproved, isLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) navigate(isApproved ? "/dashboard" : "/pending-approval", { replace: true });
-  }, [user, isApproved, navigate]);
+    if (user && !isLoading) {
+      const destination = isApproved ? "/dashboard" : "/pending-approval";
+      navigate(destination, { replace: true });
+    }
+  }, [user, isApproved, isLoading, navigate]);
 
   return <AuthLayout />;
 }
-

@@ -18,7 +18,7 @@ import { useExcluirLiderado, useLideres, useLiderados, useSalvarLiderado, type L
 
 const AREAS_SUGERIDAS = ["Diretoria Comercial e Operações", "Obras", "Comercial/Vendas", "Administrativo", "Marketing", "Produção"];
 
-type Form = { id?: string; nome: string; cargo: string; area: string; gestor_id: string; ativo: boolean };
+type Form = { id?: string; nome: string; email: string; cargo: string; area: string; gestor_id: string; ativo: boolean };
 
 export default function EquipePage() {
   const { user, isAdmin } = useAuth();
@@ -50,16 +50,18 @@ export default function EquipePage() {
     (fStatus === "todos" || (fStatus === "ativo" ? l.ativo : !l.ativo)),
   );
 
-  const abrirNovo = () => setForm({ nome: "", cargo: "", area: "", gestor_id: user?.id ?? "", ativo: true });
-  const abrirEdicao = (l: Liderado) => setForm({ id: l.id, nome: l.nome, cargo: l.cargo ?? "", area: l.area ?? "", gestor_id: l.gestor_id, ativo: l.ativo });
+  const abrirNovo = () => setForm({ nome: "", email: "", cargo: "", area: "", gestor_id: user?.id ?? "", ativo: true });
+  const abrirEdicao = (l: Liderado) => setForm({ id: l.id, nome: l.nome, email: l.email ?? "", cargo: l.cargo ?? "", area: l.area ?? "", gestor_id: l.gestor_id, ativo: l.ativo });
 
   const enviar = async () => {
     if (!form) return;
     if (!form.nome.trim()) return toast.error("Informe o nome completo.");
+    const email = form.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Informe um e-mail válido para o colaborador.");
     if (!form.gestor_id) return toast.error("Selecione o líder responsável.");
     try {
-      await salvar.mutateAsync({ id: form.id, nome: form.nome.trim(), cargo: form.cargo || null, area: form.area || null, gestor_id: form.gestor_id, ativo: form.ativo });
-      toast.success(form.id ? "Liderado atualizado." : "Liderado cadastrado.");
+      await salvar.mutateAsync({ id: form.id, nome: form.nome.trim(), email, cargo: form.cargo || null, area: form.area || null, gestor_id: form.gestor_id, ativo: form.ativo });
+      toast.success(form.id ? "Colaborador atualizado." : "Colaborador cadastrado.");
       setForm(null);
     } catch (e) { toast.error((e as Error).message); }
   };
@@ -67,7 +69,7 @@ export default function EquipePage() {
   const alternarStatus = async (l: Liderado) => {
     try {
       await salvar.mutateAsync({ id: l.id, nome: l.nome, ativo: !l.ativo });
-      toast.success(l.ativo ? "Liderado inativado." : "Liderado reativado.");
+      toast.success(l.ativo ? "Colaborador inativado." : "Colaborador reativado.");
     } catch (e) { toast.error((e as Error).message); }
   };
 
@@ -75,7 +77,7 @@ export default function EquipePage() {
     if (!confirm(`Remover ${l.nome}? Se houver entregas registradas, ele será apenas inativado.`)) return;
     try {
       const r = await excluir.mutateAsync(l.id);
-      toast.success(r === "inativado" ? "Possui histórico: foi inativado em vez de excluído." : "Liderado excluído.");
+      toast.success(r === "inativado" ? "Possui entregas registradas: foi inativado para preservar o histórico." : "Colaborador excluído.");
     } catch (e) { toast.error((e as Error).message); }
   };
 
@@ -86,17 +88,17 @@ export default function EquipePage() {
           <div>
             <h1 className="text-2xl font-bold">Equipe</h1>
             <p className="text-sm text-muted-foreground">
-              {isAdmin ? "Você vê toda a estrutura da organização." : "Você vê apenas os seus liderados."}
+              {isAdmin ? "Você vê toda a estrutura da organização." : "Você vê e gerencia apenas os colaboradores da sua equipe."}
             </p>
           </div>
-          <Button onClick={abrirNovo}><Plus className="h-4 w-4 mr-1.5" />Novo liderado</Button>
+          <Button onClick={abrirNovo}><Plus className="h-4 w-4 mr-1.5" />Novo colaborador</Button>
         </div>
 
         <Tabs defaultValue="liderados">
           {isAdmin && (
             <TabsList>
-              <TabsTrigger value="liderados">Liderados</TabsTrigger>
-              <TabsTrigger value="lideres">Líderes</TabsTrigger>
+              <TabsTrigger value="liderados">Colaboradores</TabsTrigger>
+              <TabsTrigger value="lideres">Usuários</TabsTrigger>
             </TabsList>
           )}
           <TabsContent value="liderados" className="space-y-5 mt-4">
@@ -141,7 +143,7 @@ export default function EquipePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lista.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum liderado encontrado.</TableCell></TableRow>}
+                {lista.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum colaborador encontrado.</TableCell></TableRow>}
                 {lista.map((l) => (
                   <TableRow key={l.id} className="cursor-pointer" onClick={() => setDetalhe(l)}>
                     <TableCell className="font-medium">{l.nome}</TableCell>
@@ -171,11 +173,17 @@ export default function EquipePage() {
 
       <Dialog open={!!form} onOpenChange={(o) => !o && setForm(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{form?.id ? "Editar liderado" : "Novo liderado"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{form?.id ? "Editar colaborador" : "Novo colaborador"}</DialogTitle></DialogHeader>
           {form && (
             <div className="space-y-3">
               <div><Label>Nome completo</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-              <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value }) }/></div>
+              <div>
+                <Label>E-mail do colaborador *</Label>
+                <Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <p className="text-xs text-muted-foreground mt-1">
+                  O colaborador deve criar a conta com este mesmo e-mail para acessar as entregas atribuídas.
+                </p>
+              </div>
               <div><Label>Cargo/Função</Label><Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} /></div>
               <div>
 

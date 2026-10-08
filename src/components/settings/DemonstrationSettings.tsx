@@ -33,7 +33,7 @@ export default function DemonstrationSettings() {
           <div className="flex-1 space-y-1">
             <h3 className="font-semibold">Dados de demonstração</h3>
             <p className="text-sm text-muted-foreground">
-              Popule a plataforma com 6 metas fictícias de áreas distintas, lançamentos dos
+              Popule a plataforma com 6 entregas fictícias de áreas distintas, lançamentos dos
               últimos 30 dias e 2 planos de ação. Apenas para visualização — não afeta os
               dados reais.
             </p>
@@ -46,7 +46,7 @@ export default function DemonstrationSettings() {
           <div className="rounded-lg border bg-muted/30 p-3 text-sm">
             <div className="font-medium mb-1">Dados de demonstração ativos</div>
             <div className="text-xs text-muted-foreground">
-              {status.metas} metas · {status.lancamentos} lançamentos · {status.planos} planos
+              {status.metas} entregas · {status.lancamentos} lançamentos · {status.planos} planos
               de ação
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function DemonstrationSettings() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Limpar dados de demonstração?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Todas as metas, lançamentos e planos marcados como demonstração serão
+                    Todas as entregas, lançamentos e planos marcados como demonstração serão
                     excluídos. Dados reais não serão afetados.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

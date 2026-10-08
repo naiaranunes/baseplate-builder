@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { PackageCheck, Users,
+import { PackageCheck, Users, UserRound,
   LayoutDashboard,
   Target,
   ListChecks,
@@ -22,12 +22,13 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import type { AppRole } from "@/types/auth";
 
 type NavItem = {
   title: string;
   url: string;
   icon: typeof LayoutDashboard;
-  adminOnly?: boolean;
+  roles?: AppRole[];
 };
 
 export function AppSidebar({
@@ -38,24 +39,26 @@ export function AppSidebar({
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
-  const { signOut, profile, isAdmin } = useAuth();
+  const { signOut, profile, role } = useAuth();
 
   const items: NavItem[] = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Equipe", url: "/equipe", icon: Users },
-    { title: "Agenda de Entregas", url: "/entregas", icon: PackageCheck },
-    { title: "Minhas Entregas", url: "/entregas", icon: Target },
-    { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+    { title: "Equipe", url: "/equipe", icon: Users, roles: ["admin", "supervisor"] },
+    { title: "Agenda de Entregas", url: "/agenda-entregas", icon: PackageCheck, roles: ["admin", "supervisor"] },
+    { title: "Minhas Entregas", url: "/minhas-entregas", icon: Target, roles: ["agent"] },
+    { title: "Entregas", url: "/gestao-entregas", icon: ListChecks, roles: ["admin", "supervisor"] },
+    { title: "Relatórios", url: "/relatorios", icon: BarChart3, roles: ["admin", "supervisor"] },
   ];
 
   const footerItems: NavItem[] = [
+    { title: "Meu perfil", url: "/perfil", icon: UserRound },
     { title: "Ajuda", url: "/ajuda", icon: HelpCircle },
-    { title: "Configurações", url: "/configuracoes", icon: Settings, adminOnly: true },
+    { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
   ];
 
-  const visibleFooterItems = footerItems.filter((i) => !i.adminOnly || isAdmin);
-
-  const visibleItems = items.filter((i) => !i.adminOnly || isAdmin);
+  const canSee = (item: NavItem) => !item.roles || (!!role && item.roles.includes(role));
+  const visibleFooterItems = footerItems.filter(canSee);
+  const visibleItems = items.filter(canSee);
 
   const initials = (profile?.full_name || "?")
     .split(" ")
@@ -65,9 +68,7 @@ export function AppSidebar({
     .join("");
 
   const isActive = (url: string) =>
-    url === "/dashboard"
-      ? pathname === "/" || pathname === "/dashboard"
-      : pathname.startsWith(url);
+    url === "/dashboard" ? pathname === "/" || pathname === url : pathname === url || pathname.startsWith(`${url}/`);
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -83,7 +84,7 @@ export function AppSidebar({
           </div>
         )}
 
-        {onLancarResultado && !collapsed && (
+        {onLancarResultado && !collapsed && (role === "admin" || role === "supervisor") && (
           <div className="px-3 mb-3">
             <Button
               size="sm"
@@ -170,9 +171,9 @@ export function AppSidebar({
               <div className="text-xs font-medium text-[hsl(var(--sidebar-foreground))] truncate">
                 {profile?.full_name || "Usuário"}
               </div>
-              {isAdmin && (
+              {role && (
                 <div className="text-[10px] uppercase tracking-wider text-[hsl(var(--sidebar-foreground))]/55">
-                  Admin
+                  {role === "admin" ? "Administrador" : role === "supervisor" ? "Líder" : "Colaborador"}
                 </div>
               )}
             </div>

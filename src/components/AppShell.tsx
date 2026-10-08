@@ -9,11 +9,16 @@ import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
-  metas: "Minhas Entregas",
+  metas: "Entregas",
+  entregas: "Entregas",
+  "gestao-entregas": "Entregas",
   analise: "Análise de Saúde",
   relatorios: "Relatórios",
   ajuda: "Ajuda",
   configuracoes: "Configurações",
+  "agenda-entregas": "Agenda de Entregas",
+  "minhas-entregas": "Minhas Entregas",
+  perfil: "Meu perfil",
 };
 
 function buildBreadcrumb(pathname: string): { label: string; href: string }[] {
