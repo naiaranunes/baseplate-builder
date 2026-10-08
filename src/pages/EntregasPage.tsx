@@ -62,7 +62,7 @@ export default function EntregasPage() {
   const isLider = isAdmin || isSupervisor;
   const meusIds = new Set((liderados ?? []).filter((l) => (l.email ?? "").toLowerCase() === (user?.email ?? "").toLowerCase()).map((l) => l.id));
   // Líder vê as entregas dos seus liderados (o banco já restringe); colaborador vê só as dele.
-  const visiveis = isLider ? (entregas ?? []).filter((e) => !e.liderado_cadastro_id || !meusIds.has(e.liderado_cadastro_id) || isAdmin || true) : (entregas ?? []).filter((e) => e.liderado_cadastro_id && meusIds.has(e.liderado_cadastro_id));
+  const visiveis = isLider ? (entregas ?? []) : (entregas ?? []).filter((e) => e.liderado_cadastro_id && meusIds.has(e.liderado_cadastro_id));
   const todas = visiveis.filter((e) => pessoa === "todos" || e.liderado_cadastro_id === pessoa);
 
   return (
@@ -165,7 +165,6 @@ function Agenda({ entregas, nome, onOpen }: { entregas: Entrega[]; nome: (id: st
 }
 
 function Reuniao({ entregas, liderados }: { entregas: Entrega[]; liderados: Liderado[] }) {
-  const hoje = hojeISO();
   const linhas = liderados.map((l) => {
     const es = entregas.filter((e) => e.liderado_cadastro_id === l.id);
     const concluidas = es.filter((e) => isConcluida(e.status));
@@ -211,63 +210,6 @@ function Reuniao({ entregas, liderados }: { entregas: Entrega[]; liderados: Lide
 function HistoricoGeral({ entregas, nome, onOpen }: { entregas: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void }) {
   const feitas = entregas.filter((e) => isConcluida(e.status)).sort((a, b) => (b.data_realizacao ?? "").localeCompare(a.data_realizacao ?? ""));
   return <div className="metasia-card mt-4"><TabelaEntregas itens={feitas} nome={nome} onOpen={onOpen} vazio="Nenhuma entrega realizada ainda." /></div>;
-}
-
-function LideradosTab({ liderados, entregas }: { liderados: Liderado[]; entregas: Entrega[] }) {
-  const salvar = useSalvarLiderado();
-  const excluir = useExcluirLiderado();
-  const [edit, setEdit] = useState<Partial<Liderado> | null>(null);
-
-  const onSalvar = async () => {
-    if (!edit?.nome?.trim()) return toast.error("Informe o nome.");
-    try {
-      await salvar.mutateAsync({ id: edit.id, nome: edit.nome.trim(), cargo: edit.cargo || null, email: edit.email || null, ativo: edit.ativo ?? true });
-      toast.success("Liderado salvo."); setEdit(null);
-    } catch (e) { toast.error((e as Error).message); }
-  };
-
-  return (
-    <div className="space-y-3 mt-4">
-      <Button onClick={() => setEdit({ ativo: true })}><Users className="h-4 w-4 mr-1.5" />Cadastrar liderado</Button>
-      <div className="metasia-card overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="text-left text-muted-foreground border-b"><tr><th className="p-3">Nome</th><th className="p-3">Cargo</th><th className="p-3">E-mail</th><th className="p-3">Entregas</th><th className="p-3">Situação</th><th /></tr></thead>
-          <tbody>
-            {liderados.map((l) => (
-              <tr key={l.id} className="border-b last:border-0">
-                <td className="p-3 font-medium">{l.nome}</td><td className="p-3">{l.cargo || "—"}</td><td className="p-3">{l.email || "—"}</td>
-                <td className="p-3">{entregas.filter((e) => e.liderado_cadastro_id === l.id).length}</td>
-                <td className="p-3">{l.ativo ? "Ativo" : "Inativo"}</td>
-                <td className="p-3 text-right whitespace-nowrap">
-                  <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEdit(l)}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => { if (confirm(`Excluir ${l.nome} e suas entregas?`)) excluir.mutate(l.id); }}><Trash2 className="h-4 w-4" /></Button>
-                </td>
-              </tr>
-            ))}
-            {!liderados.length && <tr><td className="p-4 text-muted-foreground" colSpan={6}>Nenhum liderado cadastrado.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-
-      <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{edit?.id ? "Editar liderado" : "Cadastrar liderado"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Nome *</Label><Input value={edit?.nome ?? ""} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></div>
-            <div><Label>Cargo</Label><Input value={edit?.cargo ?? ""} onChange={(e) => setEdit({ ...edit, cargo: e.target.value })} /></div>
-            <div><Label>E-mail</Label><Input type="email" value={edit?.email ?? ""} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
-            <div><Label>Situação</Label>
-              <Select value={edit?.ativo === false ? "inativo" : "ativo"} onValueChange={(v) => setEdit({ ...edit, ativo: v === "ativo" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="ativo">Ativo</SelectItem><SelectItem value="inativo">Inativo</SelectItem></SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter><Button onClick={onSalvar} disabled={salvar.isPending}>Salvar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
 }
 
 function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; onOpenChange: (o: boolean) => void; liderados: Liderado[] }) {
@@ -322,6 +264,7 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
           <div><Label>Descrição</Label><Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>{periodicidade === "unica" ? "Prazo *" : "Primeiro prazo *"}</Label><Input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} /></div>
+            <div><Label>Horário limite</Label><Input type="time" value={hora} onChange={(e) => setHora(e.target.value)} /><p className="text-xs text-muted-foreground mt-1">Sem horário, vale até o fim do dia.</p></div>
             <div><Label>Periodicidade</Label>
               <Select value={periodicidade} onValueChange={(v) => setPeriodicidade(v as Periodicidade)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
