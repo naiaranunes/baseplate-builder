@@ -11,6 +11,7 @@ export type Entrega = {
   lider_id: string;
   liderado_cadastro_id: string | null;
   prazo: string;
+  prazo_hora: string | null;
   status: EntregaStatus;
   periodicidade: Periodicidade;
   data_realizacao: string | null;
@@ -125,7 +126,7 @@ export function useHistorico(entregaId?: string) {
 export function useCreateEntrega() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { titulo: string; descricao?: string; liderado_cadastro_id: string; prazo: string; periodicidade: Periodicidade }) => {
+    mutationFn: async (input: { titulo: string; descricao?: string; liderado_cadastro_id: string; prazo: string; prazo_hora?: string | null; periodicidade: Periodicidade }) => {
       const { error } = await supabase.from("entregas").insert(input);
       if (error) throw error;
     },
@@ -160,7 +161,7 @@ export function useRegistrarRealizacao() {
       if (prox) {
         const { error: e2 } = await supabase.from("entregas").insert({
           titulo: entrega.titulo, descricao: entrega.descricao, liderado_cadastro_id: entrega.liderado_cadastro_id,
-          prazo: prox, periodicidade: entrega.periodicidade,
+          prazo: prox, prazo_hora: entrega.prazo_hora, periodicidade: entrega.periodicidade,
         });
         if (e2) throw e2;
       }
@@ -181,6 +182,17 @@ export function useAddComentario() {
       if (error) throw error;
     },
     onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["entrega_historico", v.entrega_id] }),
+  });
+}
+
+export function useExcluirUsuario() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("excluir-usuario", { body: { user_id: userId } });
+      if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Erro ao excluir");
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team-members"] }); qc.invalidateQueries({ queryKey: ["lideres"] }); },
   });
 }
 

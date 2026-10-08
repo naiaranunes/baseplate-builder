@@ -38,14 +38,14 @@ export function AppSidebar({
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
-  const { signOut, profile, isAdmin } = useAuth();
+  const { signOut, profile, isAdmin, isSupervisor } = useAuth();
+  const isLider = isAdmin || isSupervisor;
 
   const items: NavItem[] = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Equipe", url: "/equipe", icon: Users },
-    { title: "Agenda de Entregas", url: "/entregas", icon: PackageCheck },
-    { title: "Minhas Entregas", url: "/entregas", icon: Target },
-    { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+    ...(isLider ? [{ title: "Equipe", url: "/equipe", icon: Users }] : []),
+    { title: isLider ? "Agenda de Entregas" : "Minhas tarefas", url: "/entregas", icon: PackageCheck },
+    ...(isLider ? [{ title: "Relatórios", url: "/relatorios", icon: BarChart3 }] : []),
   ];
 
   const footerItems: NavItem[] = [

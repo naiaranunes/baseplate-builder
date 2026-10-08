@@ -19,19 +19,30 @@ import {
   useHistorico, useLiderados, useMembros, useRegistrarRealizacao, useSalvarLiderado, useUpdateStatus,
 } from "@/hooks/useEntregas";
 import {
-  PERIODICIDADE_LABEL, STATUS_LABEL, STATUS_OPCOES, hojeISO, isConcluida, noPrazo, statusExibido,
-  type EntregaStatus, type Periodicidade, type StatusExibido,
+  PERIODICIDADE_LABEL, SITUACAO_LABEL, STATUS_LABEL, STATUS_OPCOES, fmtPrazo, hojeISO, isConcluida, noPrazo, situacao, statusExibido,
+  type EntregaStatus, type Periodicidade, type Situacao, type StatusExibido,
 } from "@/lib/entregas";
 
 const STATUS_VARIANT: Record<StatusExibido, "default" | "secondary" | "destructive" | "outline"> = {
   pendente: "outline", em_andamento: "secondary", entregue: "default", aprovada: "default", devolvida: "destructive", atrasada: "destructive",
 };
 const fmt = (d: string) => new Date(d + (d.length === 10 ? "T00:00:00" : "")).toLocaleDateString("pt-BR");
-const addDias = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const SIT_CLASS: Record<Situacao, string> = {
+  atrasada: "bg-destructive text-destructive-foreground",
+  proxima: "bg-warning text-warning-foreground",
+  no_prazo: "bg-success text-success-foreground",
+  concluida: "bg-secondary text-secondary-foreground",
+};
 
 function StatusBadge({ e }: { e: Entrega }) {
-  const s = statusExibido(e.status, e.prazo);
-  return <Badge variant={STATUS_VARIANT[s]}>{STATUS_LABEL[s]}</Badge>;
+  const s = statusExibido(e.status, e.prazo, new Date(), e.prazo_hora);
+  const sit = situacao(e);
+  return (
+    <div className="flex flex-wrap gap-1">
+      <Badge className={SIT_CLASS[sit]}>{SITUACAO_LABEL[sit]}</Badge>
+      {s !== "atrasada" && sit !== "concluida" && <Badge variant={STATUS_VARIANT[s]}>{STATUS_LABEL[s]}</Badge>}
+    </div>
+  );
 }
 
 export default function EntregasPage() {
@@ -50,6 +61,7 @@ export default function EntregasPage() {
   // Colaborador (sem papel de líder) vê apenas as tarefas atribuídas a ele.
   const isLider = isAdmin || isSupervisor;
   const meusIds = new Set((liderados ?? []).filter((l) => (l.email ?? "").toLowerCase() === (user?.email ?? "").toLowerCase()).map((l) => l.id));
+  // Líder vê as entregas dos seus liderados (o banco já restringe); colaborador vê só as dele.
   const visiveis = isLider ? (entregas ?? []) : (entregas ?? []).filter((e) => e.liderado_cadastro_id && meusIds.has(e.liderado_cadastro_id));
   const todas = visiveis.filter((e) => pessoa === "todos" || e.liderado_cadastro_id === pessoa);
 
@@ -58,10 +70,10 @@ export default function EntregasPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">Agenda de Entregas</h1>
+            <h1 className="text-2xl font-bold">{isLider ? "Agenda de Entregas" : "Minhas tarefas"}</h1>
             <p className="text-sm text-muted-foreground">O que cada pessoa deve entregar, quando, se entregou e qual a situação.</p>
           </div>
-          <div className="flex gap-2">
+          {isLider && <div className="flex gap-2">
             <Select value={pessoa} onValueChange={setPessoa}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -72,41 +84,44 @@ export default function EntregasPage() {
             <Button onClick={() => (liderados?.length ? setNovoOpen(true) : toast.error("Cadastre um liderado primeiro."))}>
               <Plus className="h-4 w-4 mr-1.5" />Nova entrega
             </Button>
-          </div>
+          </div>}
         </div>
 
         <Tabs defaultValue="agenda">
           <TabsList>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
-            <TabsTrigger value="reuniao">Visão para reunião</TabsTrigger>
+            {isLider && <TabsTrigger value="reuniao">Visão para reunião</TabsTrigger>}
             <TabsTrigger value="historico">Histórico</TabsTrigger>
-            <TabsTrigger value="liderados">Liderados</TabsTrigger>
           </TabsList>
 
           {isLoading ? <Skeleton className="h-48 w-full mt-4" /> : (
             <>
               <TabsContent value="agenda"><Agenda entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
-              <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => pessoa === "todos" || l.id === pessoa)} /></TabsContent>
+              <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => !meusIds.has(l.id) && (pessoa === "todos" || l.id === pessoa))} /></TabsContent>
               <TabsContent value="historico"><HistoricoGeral entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
-              <TabsContent value="liderados"><LideradosTab liderados={liderados ?? []} entregas={entregas ?? []} /></TabsContent>
             </>
           )}
         </Tabs>
       </div>
 
-      <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo)} />
+      <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo && !meusIds.has(l.id))} />
       <DetalheEntrega entrega={selecionada} onClose={() => setSelecionada(null)} nome={nomeLiderado} />
     </AppShell>
   );
 }
 
 function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void; vazio: string }) {
+  const excluir = useExcluirEntrega();
+  const apagar = async (e: Entrega) => {
+    if (!confirm(`Excluir a entrega "${e.titulo}"?`)) return;
+    try { await excluir.mutateAsync(e.id); toast.success("Entrega excluída."); } catch (err) { toast.error((err as Error).message); }
+  };
   if (!itens.length) return <p className="text-sm text-muted-foreground p-4">{vazio}</p>;
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="text-left text-muted-foreground border-b">
-          <tr><th className="p-3">Liderado</th><th className="p-3">Entrega</th><th className="p-3">Periodicidade</th><th className="p-3">Prazo</th><th className="p-3">Realizada em</th><th className="p-3">Situação</th></tr>
+          <tr><th className="p-3">Liderado</th><th className="p-3">Entrega</th><th className="p-3">Periodicidade</th><th className="p-3">Prazo</th><th className="p-3">Realizada em</th><th className="p-3">Situação</th><th /></tr>
         </thead>
         <tbody>
           {itens.map((e) => (
@@ -114,9 +129,12 @@ function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome
               <td className="p-3">{nome(e.liderado_cadastro_id)}</td>
               <td className="p-3 font-medium">{e.titulo}</td>
               <td className="p-3">{PERIODICIDADE_LABEL[e.periodicidade]}</td>
-              <td className="p-3">{fmt(e.prazo)}</td>
+              <td className="p-3 whitespace-nowrap">{fmtPrazo(e.prazo, e.prazo_hora)}</td>
               <td className="p-3">{e.data_realizacao ? fmt(e.data_realizacao) : "—"}</td>
               <td className="p-3"><StatusBadge e={e} /></td>
+              <td className="p-3 text-right">
+                <Button size="icon" variant="ghost" aria-label="Excluir entrega" onClick={(ev) => { ev.stopPropagation(); apagar(e); }}><Trash2 className="h-4 w-4" /></Button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -126,13 +144,13 @@ function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome
 }
 
 function Agenda({ entregas, nome, onOpen }: { entregas: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void }) {
-  const hoje = hojeISO(); const semana = addDias(7);
+  const agora = new Date();
   const abertas = entregas.filter((e) => !isConcluida(e.status));
+  const de = (s: Situacao) => abertas.filter((e) => situacao(e, agora) === s);
   const grupos = [
-    { t: "Atrasadas", itens: abertas.filter((e) => e.prazo < hoje), vazio: "Nenhuma entrega atrasada." },
-    { t: "Vencem hoje", itens: abertas.filter((e) => e.prazo === hoje), vazio: "Nada vence hoje." },
-    { t: "Próximos 7 dias", itens: abertas.filter((e) => e.prazo > hoje && e.prazo <= semana), vazio: "Nada previsto para a semana." },
-    { t: "Mais adiante", itens: abertas.filter((e) => e.prazo > semana), vazio: "Nada previsto." },
+    { t: "Em atraso", itens: de("atrasada"), vazio: "Nenhuma entrega em atraso." },
+    { t: "Próximas do vencimento (48h)", itens: de("proxima"), vazio: "Nada vence nas próximas 48 horas." },
+    { t: "No prazo", itens: de("no_prazo"), vazio: "Nenhuma outra entrega prevista." },
   ];
   return (
     <div className="space-y-4 mt-4">
@@ -147,12 +165,11 @@ function Agenda({ entregas, nome, onOpen }: { entregas: Entrega[]; nome: (id: st
 }
 
 function Reuniao({ entregas, liderados }: { entregas: Entrega[]; liderados: Liderado[] }) {
-  const hoje = hojeISO();
   const linhas = liderados.map((l) => {
     const es = entregas.filter((e) => e.liderado_cadastro_id === l.id);
     const concluidas = es.filter((e) => isConcluida(e.status));
-    const atrasadas = es.filter((e) => !isConcluida(e.status) && e.prazo < hoje);
-    const previstas = es.filter((e) => !isConcluida(e.status) && e.prazo >= hoje);
+    const atrasadas = es.filter((e) => situacao(e) === "atrasada");
+    const previstas = es.filter((e) => !isConcluida(e.status) && situacao(e) !== "atrasada");
     const emDia = concluidas.filter((e) => noPrazo(e.prazo, e.data_realizacao)).length;
     const pct = concluidas.length ? Math.round((emDia / concluidas.length) * 100) : null;
     return { l, total: es.length, concluidas: concluidas.length, atrasadas, previstas: previstas.length, pct };
@@ -179,7 +196,7 @@ function Reuniao({ entregas, liderados }: { entregas: Entrega[]; liderados: Lide
                 <td className="p-3">{r.atrasadas.length ? <Badge variant="destructive">{r.atrasadas.length}</Badge> : 0}</td>
                 <td className="p-3">{r.concluidas}</td>
                 <td className="p-3">{r.pct === null ? "—" : `${r.pct}%`}</td>
-                <td className="p-3 text-xs">{r.atrasadas.map((e) => `${e.titulo} (${fmt(e.prazo)})`).join(" · ") || "—"}</td>
+                <td className="p-3 text-xs">{r.atrasadas.map((e) => `${e.titulo} (${fmtPrazo(e.prazo, e.prazo_hora)})`).join(" · ") || "—"}</td>
               </tr>
             ))}
             {!linhas.length && <tr><td className="p-4 text-muted-foreground" colSpan={6}>Cadastre liderados para ver o consolidado.</td></tr>}
@@ -195,69 +212,13 @@ function HistoricoGeral({ entregas, nome, onOpen }: { entregas: Entrega[]; nome:
   return <div className="metasia-card mt-4"><TabelaEntregas itens={feitas} nome={nome} onOpen={onOpen} vazio="Nenhuma entrega realizada ainda." /></div>;
 }
 
-function LideradosTab({ liderados, entregas }: { liderados: Liderado[]; entregas: Entrega[] }) {
-  const salvar = useSalvarLiderado();
-  const excluir = useExcluirLiderado();
-  const [edit, setEdit] = useState<Partial<Liderado> | null>(null);
-
-  const onSalvar = async () => {
-    if (!edit?.nome?.trim()) return toast.error("Informe o nome.");
-    try {
-      await salvar.mutateAsync({ id: edit.id, nome: edit.nome.trim(), cargo: edit.cargo || null, email: edit.email || null, ativo: edit.ativo ?? true });
-      toast.success("Liderado salvo."); setEdit(null);
-    } catch (e) { toast.error((e as Error).message); }
-  };
-
-  return (
-    <div className="space-y-3 mt-4">
-      <Button onClick={() => setEdit({ ativo: true })}><Users className="h-4 w-4 mr-1.5" />Cadastrar liderado</Button>
-      <div className="metasia-card overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="text-left text-muted-foreground border-b"><tr><th className="p-3">Nome</th><th className="p-3">Cargo</th><th className="p-3">E-mail</th><th className="p-3">Entregas</th><th className="p-3">Situação</th><th /></tr></thead>
-          <tbody>
-            {liderados.map((l) => (
-              <tr key={l.id} className="border-b last:border-0">
-                <td className="p-3 font-medium">{l.nome}</td><td className="p-3">{l.cargo || "—"}</td><td className="p-3">{l.email || "—"}</td>
-                <td className="p-3">{entregas.filter((e) => e.liderado_cadastro_id === l.id).length}</td>
-                <td className="p-3">{l.ativo ? "Ativo" : "Inativo"}</td>
-                <td className="p-3 text-right whitespace-nowrap">
-                  <Button size="icon" variant="ghost" aria-label="Editar" onClick={() => setEdit(l)}><Pencil className="h-4 w-4" /></Button>
-                  <Button size="icon" variant="ghost" aria-label="Excluir" onClick={() => { if (confirm(`Excluir ${l.nome} e suas entregas?`)) excluir.mutate(l.id); }}><Trash2 className="h-4 w-4" /></Button>
-                </td>
-              </tr>
-            ))}
-            {!liderados.length && <tr><td className="p-4 text-muted-foreground" colSpan={6}>Nenhum liderado cadastrado.</td></tr>}
-          </tbody>
-        </table>
-      </div>
-
-      <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{edit?.id ? "Editar liderado" : "Cadastrar liderado"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Nome *</Label><Input value={edit?.nome ?? ""} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></div>
-            <div><Label>Cargo</Label><Input value={edit?.cargo ?? ""} onChange={(e) => setEdit({ ...edit, cargo: e.target.value })} /></div>
-            <div><Label>E-mail</Label><Input type="email" value={edit?.email ?? ""} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
-            <div><Label>Situação</Label>
-              <Select value={edit?.ativo === false ? "inativo" : "ativo"} onValueChange={(v) => setEdit({ ...edit, ativo: v === "ativo" })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="ativo">Ativo</SelectItem><SelectItem value="inativo">Inativo</SelectItem></SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter><Button onClick={onSalvar} disabled={salvar.isPending}>Salvar</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
 function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; onOpenChange: (o: boolean) => void; liderados: Liderado[] }) {
   const create = useCreateEntrega();
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [liderado, setLiderado] = useState("");
   const [prazo, setPrazo] = useState("");
+  const [hora, setHora] = useState("");
   const [periodicidade, setPeriodicidade] = useState<Periodicidade>("unica");
 
   const [email, setEmail] = useState("");
@@ -273,13 +234,13 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
       if (mail && atual && (atual.email ?? "").toLowerCase() !== mail) {
         await salvarLiderado.mutateAsync({ id: liderado, nome: atual.nome, email: mail });
       }
-      await create.mutateAsync({ titulo, descricao: descricao || undefined, liderado_cadastro_id: liderado, prazo, periodicidade });
+      await create.mutateAsync({ titulo, descricao: descricao || undefined, liderado_cadastro_id: liderado, prazo, prazo_hora: hora || null, periodicidade });
       if (mail) {
         const { data, error } = await supabase.functions.invoke("convidar-colaborador", { body: { liderado_id: liderado, redirect_to: window.location.origin } });
         if (error || data?.error) toast.error("Entrega agendada, mas o convite falhou: " + (data?.error ?? error?.message));
         else toast.success(data?.status === "ja_cadastrado" ? "Entrega agendada. O colaborador já tem acesso e verá a tarefa." : "Entrega agendada e convite enviado por e-mail.");
       } else toast.success("Entrega agendada.");
-      setTitulo(""); setDescricao(""); setPrazo(""); setPeriodicidade("unica"); setEmail(""); setLiderado("");
+      setTitulo(""); setDescricao(""); setPrazo(""); setHora(""); setPeriodicidade("unica"); setEmail(""); setLiderado("");
       onOpenChange(false);
     } catch (e) { toast.error((e as Error).message); }
   };
@@ -303,6 +264,7 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
           <div><Label>Descrição</Label><Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>{periodicidade === "unica" ? "Prazo *" : "Primeiro prazo *"}</Label><Input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} /></div>
+            <div><Label>Horário limite</Label><Input type="time" value={hora} onChange={(e) => setHora(e.target.value)} /><p className="text-xs text-muted-foreground mt-1">Sem horário, vale até o fim do dia.</p></div>
             <div><Label>Periodicidade</Label>
               <Select value={periodicidade} onValueChange={(v) => setPeriodicidade(v as Periodicidade)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -362,7 +324,7 @@ function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; o
               {entrega.descricao && <p className="text-muted-foreground">{entrega.descricao}</p>}
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="text-muted-foreground">Liderado:</span> {nome(entrega.liderado_cadastro_id)}</div>
-                <div><span className="text-muted-foreground">Prazo:</span> {fmt(entrega.prazo)}</div>
+                <div><span className="text-muted-foreground">Prazo:</span> {fmtPrazo(entrega.prazo, entrega.prazo_hora)}</div>
                 <div><span className="text-muted-foreground">Periodicidade:</span> {PERIODICIDADE_LABEL[entrega.periodicidade]}</div>
                 <div><StatusBadge e={entrega} /></div>
                 {entrega.data_realizacao && <div className="col-span-2"><span className="text-muted-foreground">Realizada em:</span> {fmt(entrega.data_realizacao)} {noPrazo(entrega.prazo, entrega.data_realizacao) ? "(no prazo)" : "(com atraso)"}</div>}

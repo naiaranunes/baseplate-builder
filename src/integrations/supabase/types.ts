@@ -152,6 +152,7 @@ export type Database = {
           observacao_realizacao: string | null
           periodicidade: string
           prazo: string
+          prazo_hora: string | null
           status: string
           titulo: string
           updated_at: string
@@ -168,6 +169,7 @@ export type Database = {
           observacao_realizacao?: string | null
           periodicidade?: string
           prazo: string
+          prazo_hora?: string | null
           status?: string
           titulo: string
           updated_at?: string
@@ -184,6 +186,7 @@ export type Database = {
           observacao_realizacao?: string | null
           periodicidade?: string
           prazo?: string
+          prazo_hora?: string | null
           status?: string
           titulo?: string
           updated_at?: string
@@ -629,7 +632,9 @@ export type Database = {
         }
         Returns: string
       }
+      e_meu_cadastro: { Args: { _lid: string }; Returns: boolean }
       ensure_auth_trigger: { Args: never; Returns: Json }
+      gerencia_liderado: { Args: { _lid: string }; Returns: boolean }
       get_handle_new_user_def: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -652,6 +657,10 @@ export type Database = {
           full_name: string
           id: string
         }[]
+      }
+      pode_ver_entrega: {
+        Args: { _criador: string; _lid: string; _lider: string }
+        Returns: boolean
       }
       read_vault_secret: { Args: { p_key: string }; Returns: string }
       store_vault_secret: {

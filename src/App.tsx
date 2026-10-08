@@ -13,8 +13,6 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import DashboardPage from "./pages/DashboardPage";
-import MetasPage from "./pages/MetasPage";
-import AnaliseMetaPage from "./pages/AnaliseMetaPage";
 import EntregasPage from "./pages/EntregasPage";
 import EquipePage from "@/pages/EquipePage";
 import RelatoriosPage from "./pages/RelatoriosPage";
@@ -104,25 +102,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Entregas / Metas */}
-            <Route
-              path="/entregas"
-              element={
-                <ProtectedRoute>
-                  <MetasPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/entregas/:id/analise"
-              element={
-                <ProtectedRoute>
-                  <AnaliseMetaPage />
                 </ProtectedRoute>
               }
             />
