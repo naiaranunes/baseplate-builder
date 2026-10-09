@@ -28,7 +28,7 @@ export function SignupForm() {
     const parsed = schema.safeParse(form);
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setLoading(true);
-    const { error, pending, isApproved } = await signUp(form.fullName, form.email, form.password);
+    const { error, isApproved, role } = await signUp(form.fullName, form.email, form.password);
     setLoading(false);
     if (error) { toast.error(error); return; }
     if (isApproved === false) {
@@ -36,7 +36,7 @@ export function SignupForm() {
       navigate("/pending-approval", { replace: true });
     } else if (isApproved === true) {
       toast.success("Conta criada com sucesso!");
-      navigate("/dashboard", { replace: true });
+      navigate(role ? "/dashboard" : "/", { replace: true });
     } else {
       // Fallback when profile not yet readable (email confirmation required)
       toast.info("Conta criada! Verifique seu email para confirmar o cadastro.");

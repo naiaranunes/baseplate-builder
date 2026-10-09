@@ -10,30 +10,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const loadedFor = useRef<string | null>(null);
   const accessTokenRef = useRef<string | null>(null);
 
   const loadProfileAndRole = useCallback(async (uid: string) => {
-    const [{ data: p }, { data: r }] = await Promise.all([
+    const [profileResult, roleResult] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid).order("role").maybeSingle(),
     ]);
-    setProfile((p as Profile) ?? null);
-    setRole((r?.role as AppRole) ?? null);
+    if (profileResult.error) console.error("[Auth] Falha ao carregar perfil:", profileResult.error);
+    if (roleResult.error) console.error("[Auth] Falha ao carregar papel:", roleResult.error);
+    setProfile((profileResult.data as Profile) ?? null);
+    setRole((roleResult.data?.role as AppRole) ?? null);
+    if (roleResult.data?.role === "agent") {
+      const { error } = await supabase.rpc("claim_my_liderado");
+      if (error) console.error("[Auth] Falha ao vincular colaborador ao perfil:", error);
+    }
   }, []);
 
   const checkActiveStatus = useCallback(async () => {
     try {
-      const { data } = await supabase.functions.invoke("check-user-active");
+      const { data, error } = await supabase.functions.invoke("check-user-active");
+      if (error) {
+        console.warn("[Auth] Falha ao verificar o status da conta:", error);
+        return;
+      }
       // Only sign out when explicitly inactive. Unapproved users go to /pending-approval.
       if (data && data.active === false) {
         await supabase.auth.signOut();
       }
-    } catch (_) { /* ignore */ }
+    } catch (error) {
+      console.warn("[Auth] Falha ao verificar o status da conta:", error);
+    }
   }, []);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (event === "PASSWORD_RECOVERY") setIsPasswordRecovery(true);
+      if (event === "SIGNED_OUT") setIsPasswordRecovery(false);
       const nextUser = sess?.user ?? null;
       accessTokenRef.current = sess?.access_token ?? null;
       // Keep context stable on TOKEN_REFRESHED / tab-focus when the user has not changed.
@@ -44,8 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null); setRole(null); loadedFor.current = null;
       } else if (loadedFor.current !== nextUser.id) {
         loadedFor.current = nextUser.id;
+        setIsLoading(true);
         setTimeout(() => {
-          loadProfileAndRole(nextUser.id);
+          void loadProfileAndRole(nextUser.id)
+            .catch((error) => console.error("[Auth] Falha ao carregar perfil:", error))
+            .finally(() => setIsLoading(false));
           checkActiveStatus();
         }, 0);
       }
@@ -57,7 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(s?.user ?? null);
       if (s?.user) {
         loadedFor.current = s.user.id;
-        loadProfileAndRole(s.user.id).finally(() => setIsLoading(false));
+        void loadProfileAndRole(s.user.id)
+          .finally(() => setIsLoading(false))
+          .catch((error) => console.error("[Auth] Falha ao carregar perfil:", error));
         checkActiveStatus();
       } else {
         setIsLoading(false);
@@ -71,36 +91,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handler = () => {
       if (!user) return;
-      try {
-        const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`;
-        const body = JSON.stringify({ status: "offline" });
-        fetch(url, {
-          method: "PATCH",
-          keepalive: true,
-          headers: {
-            "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${accessTokenRef.current ?? ""}`,
-          },
-          body,
-        });
-      } catch (_) {}
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`;
+      const body = JSON.stringify({ status: "offline" });
+      void fetch(url, {
+        method: "PATCH",
+        keepalive: true,
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${accessTokenRef.current ?? ""}`,
+        },
+        body,
+      }).catch((error) => console.warn("[Auth] Falha ao atualizar presença:", error));
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [user]);
 
-  const signIn: AuthContextValue["signIn"] = async (email, password) => {
+  const signIn = useCallback<AuthContextValue["signIn"]>(async (email, password) => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     if (!data.user) return { error: "Falha no login." };
 
     // Fetch approval/active state immediately so caller can route correctly.
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("is_approved, is_active")
-      .eq("id", data.user.id)
-      .maybeSingle();
+    const [{ data: prof, error: profileError }, { data: roleData, error: roleError }] = await Promise.all([
+      supabase.from("profiles").select("is_approved, is_active").eq("id", data.user.id).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", data.user.id).maybeSingle(),
+    ]);
+    if (profileError) {
+      console.error("[Auth] Falha ao validar o perfil durante o login:", profileError);
+      return { error: "Não foi possível verificar o status da sua conta." };
+    }
+    if (roleError) {
+      console.error("[Auth] Falha ao validar o papel durante o login:", roleError);
+      return { error: "Não foi possível verificar o perfil de acesso da sua conta." };
+    }
 
     const isActive = prof ? !!prof.is_active : true;
     const isApproved = prof ? !!prof.is_approved : false;
@@ -110,11 +135,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: "Sua conta foi desativada." };
     }
 
-    await supabase.from("profiles").update({ status: "online" }).eq("id", data.user.id);
-    return { isApproved, isActive };
-  };
+    const { error: presenceError } = await supabase.from("profiles").update({ status: "online" }).eq("id", data.user.id);
+    if (presenceError) console.warn("[Auth] Falha ao atualizar presença:", presenceError);
+    const userRole = roleData?.role as AppRole | undefined;
+    if (userRole === "agent") {
+      const { error } = await supabase.rpc("claim_my_liderado");
+      if (error) console.error("[Auth] Falha ao vincular colaborador ao perfil:", error);
+    }
+    return { isApproved, isActive, role: userRole };
+  }, []);
 
-  const signUp: AuthContextValue["signUp"] = async (fullName, email, password) => {
+  const signUp = useCallback<AuthContextValue["signUp"]>(async (fullName, email, password) => {
     const { data: vd, error: vErr } = await supabase.functions.invoke("validate-signup", { body: { email } });
     if (vErr) return { error: "Falha ao validar cadastro." };
     if (vd && vd.allowed === false) return { error: vd.message ?? "Cadastro não permitido." };
@@ -129,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Determine approval status; if the on_auth_user_created trigger did not run
     // (common after a remix), fall back to the bootstrap-profile edge function.
     let isApproved: boolean | undefined = undefined;
+    let userRole: AppRole | undefined;
     const newUserId = signUpData.user?.id;
     const hasSession = !!signUpData.session;
 
@@ -137,42 +169,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("profiles").select("is_approved").eq("id", newUserId).maybeSingle();
       if (prof) {
         isApproved = !!prof.is_approved;
+        const { data: roleData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", newUserId)
+          .maybeSingle();
+        if (roleError) console.warn("[Auth] Falha ao carregar o perfil criado:", roleError);
+        else userRole = roleData?.role as AppRole | undefined;
       } else if (hasSession) {
         // Profile missing — invoke fallback to recreate it idempotently.
         try {
           const { data: boot } = await supabase.functions.invoke("bootstrap-profile");
           if (boot && typeof boot.isApproved === "boolean") {
             isApproved = boot.isApproved;
+            if (boot.role === "admin" || boot.role === "supervisor" || boot.role === "agent") {
+              userRole = boot.role;
+            }
             // Refresh local profile/role caches.
             await loadProfileAndRole(newUserId);
           }
-        } catch (_) { /* swallow — caller falls back to email-confirmation message */ }
+        } catch (error) {
+          console.warn("[Auth] Falha ao recriar perfil após o cadastro:", error);
+        }
       }
     }
-    return { pending: true, isApproved };
-  };
+    return { pending: true, isApproved, role: userRole };
+  }, [loadProfileAndRole]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     if (user) {
-      try { await supabase.from("profiles").update({ status: "offline" }).eq("id", user.id); } catch (_) {}
+      try {
+        const { error } = await supabase.from("profiles").update({ status: "offline" }).eq("id", user.id);
+        if (error) console.warn("[Auth] Falha ao atualizar presença ao sair:", error);
+      } catch (error) {
+        console.warn("[Auth] Falha ao atualizar presença ao sair:", error);
+      }
     }
     await supabase.auth.signOut();
-  };
+  }, [user]);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) await loadProfileAndRole(user.id);
-  };
+  }, [user, loadProfileAndRole]);
+
+  const clearPasswordRecovery = useCallback(() => setIsPasswordRecovery(false), []);
 
   const value = useMemo<AuthContextValue>(() => ({
-    user, session, profile, role, isLoading,
+    user, session, profile, role, isLoading, isPasswordRecovery,
     isAdmin: role === "admin",
     isSupervisor: role === "supervisor",
     isAgent: role === "agent",
     isApproved: !!profile?.is_approved,
     isActive: profile ? profile.is_active : true,
     isPendingApproval: !!profile && profile.is_active && !profile.is_approved,
-    signIn, signUp, signOut, refreshProfile,
-  }), [user, session, profile, role, isLoading]);
+    signIn, signUp, signOut, clearPasswordRecovery, refreshProfile,
+  }), [user, session, profile, role, isLoading, isPasswordRecovery, signIn, signUp, signOut, clearPasswordRecovery, refreshProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

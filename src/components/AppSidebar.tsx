@@ -38,15 +38,14 @@ export function AppSidebar({
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
-  const { signOut, profile, isAdmin } = useAuth();
+  const { signOut, profile, isAdmin, isSupervisor } = useAuth();
+  const isLider = isAdmin || isSupervisor;
 
   const items: NavItem[] = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Equipe", url: "/equipe", icon: Users },
-    { title: "Agenda de Entregas", url: "/entregas", icon: PackageCheck },
-    { title: "Minhas Entregas", url: "/entregas", icon: Target },
-    { title: "Planos de Ação", url: "/planos", icon: ListChecks },
-    { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+    ...(isLider ? [{ title: "Equipe", url: "/equipe", icon: Users }] : []),
+    { title: isLider ? "Agenda de Entregas" : "Minhas tarefas", url: "/entregas", icon: PackageCheck },
+    ...(isLider ? [{ title: "Relatórios", url: "/relatorios", icon: BarChart3 }] : []),
   ];
 
   const footerItems: NavItem[] = [
@@ -75,11 +74,13 @@ export function AppSidebar({
       <SidebarContent className="px-2 pt-4">
         {!collapsed && (
           <div className="px-3 mb-6 select-none">
-            <div className="text-[hsl(var(--sidebar-foreground))] text-xl font-black tracking-tight leading-none">
-              Gestão <span style={{ color: "var(--color-blue-hover)" }}>Wiadupla</span>
-            </div>
-            <div className="text-[10px] uppercase tracking-widest text-[hsl(var(--sidebar-foreground))]/55 mt-1">
-              Gestão de metas & resultados
+            <img
+              src="/wiadupla-logo.png"
+              alt="Wiadupla - Serviço de Pavimentação"
+              className="w-full max-w-[180px] h-auto"
+            />
+            <div className="text-[10px] uppercase tracking-widest text-[hsl(var(--sidebar-foreground))]/65 mt-2">
+              Gestão de Entregas
             </div>
           </div>
         )}
@@ -93,7 +94,7 @@ export function AppSidebar({
               onClick={onLancarResultado}
             >
               <Plus className="h-4 w-4" />
-              Lançar resultado
+              Lançar Entrega
             </Button>
           </div>
         )}

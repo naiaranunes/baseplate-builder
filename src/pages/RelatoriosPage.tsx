@@ -388,7 +388,7 @@ export default function RelatoriosPage() {
                 <FileText className="h-6 w-6" style={{ color: "var(--color-blue)" }} />
               </div>
               <p className="text-sm text-muted-foreground">
-                Nenhuma meta atende aos filtros aplicados.
+                Nenhuma entrega atende aos filtros aplicados.
               </p>
             </div>
           ) : (

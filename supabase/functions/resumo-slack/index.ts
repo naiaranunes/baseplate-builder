@@ -55,7 +55,7 @@ function buildAlertaBlocks(metas: MetaPayload[]) {
   const blocks: unknown[] = [
     {
       type: "header",
-      text: { type: "plain_text", text: `${emoji} Meta em risco: ${meta.nome}` },
+      text: { type: "plain_text", text: `${emoji} Entrega em risco: ${meta.nome}` },
     },
     {
       type: "section",
@@ -87,7 +87,7 @@ function buildAlertaBlocks(metas: MetaPayload[]) {
   blocks.push({
     type: "context",
     elements: [
-      { type: "mrkdwn", text: "Enviado por Gestão Wiadupla · acompanhe em /metas/" + meta.id + "/analise" },
+      { type: "mrkdwn", text: "Enviado por Gestão de Entregas Wiadupla · acompanhe em /entregas/" + meta.id + "/analise" },
     ],
   });
 
@@ -102,13 +102,13 @@ function buildResumoSemanalBlocks(metas: MetaPayload[]) {
   const blocks: unknown[] = [
     {
       type: "header",
-      text: { type: "plain_text", text: ":bar_chart: Resumo semanal de metas" },
+      text: { type: "plain_text", text: ":bar_chart: Resumo semanal de entregas" },
     },
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*Total:* ${metas.length} metas · :large_green_circle: ${verde} no prazo · :large_yellow_circle: ${amarelo} em atenção · :red_circle: ${vermelho} em risco`,
+        text: `*Total:* ${metas.length} entregas · :large_green_circle: ${verde} no prazo · :large_yellow_circle: ${amarelo} em atenção · :red_circle: ${vermelho} em risco`,
       },
     },
   ];
@@ -118,7 +118,7 @@ function buildResumoSemanalBlocks(metas: MetaPayload[]) {
     blocks.push({ type: "divider" });
     blocks.push({
       type: "section",
-      text: { type: "mrkdwn", text: "*Metas em risco que precisam de atenção:*" },
+      text: { type: "mrkdwn", text: "*Entregas em risco que precisam de atenção:*" },
     });
     for (const m of emRisco) {
       blocks.push({
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
   try {
     const body = (await req.json()) as Body;
     if (!body?.tipo || !Array.isArray(body.metas) || body.metas.length === 0) {
-      return json({ ok: false, message: "Payload inválido — tipo e metas são obrigatórios." }, 400);
+      return json({ ok: false, message: "Payload inválido — tipo e lista de entregas são obrigatórios." }, 400);
     }
 
     // Verifica auth
@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
       return json({ ok: false, message: `Slack respondeu ${slackResp.status}: ${txt.slice(0, 200)}` }, 502);
     }
 
-    return json({ ok: true });
+    return json({ ok: true }, 200);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return json({ ok: false, message: `Erro inesperado: ${msg}` }, 500);

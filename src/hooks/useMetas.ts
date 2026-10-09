@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import type {
   Comentario,
   Lancamento,
@@ -78,18 +79,24 @@ export function useComentarios(metaId: string | undefined) {
   });
 }
 
-export function useMembros() {
+export function useColaboradoresResponsaveis(enabled = true) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["membros"],
+    queryKey: ["colaboradores-responsaveis", user?.id],
+    enabled: enabled && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, avatar_url")
-        .eq("is_active", true)
-        .eq("is_approved", true)
-        .order("full_name", { ascending: true });
+        .from("liderados")
+        .select("id, usuario_id, nome, ativo")
+        .order("nome", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+
+      return (data ?? []).map((colaborador) => ({
+        id: colaborador.usuario_id,
+        cadastroId: colaborador.id,
+        full_name: colaborador.nome,
+        ativo: colaborador.ativo,
+      }));
     },
   });
 }
@@ -125,6 +132,7 @@ export function useCreateMeta() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: METAS_KEY });
+      qc.invalidateQueries({ queryKey: ["colaboradores-responsaveis"] });
     },
   });
 }

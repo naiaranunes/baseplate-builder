@@ -6,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export default function PendingApprovalPage() {
-  const { profile, signOut, refreshProfile } = useAuth();
+  const { profile, role, signOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(false);
 

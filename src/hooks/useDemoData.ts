@@ -6,15 +6,13 @@ export function useDemoStatus() {
   return useQuery({
     queryKey: ["demo-status"],
     queryFn: async () => {
-      const [{ count: metas }, { count: lancamentos }, { count: planos }] = await Promise.all([
+      const [{ count: metas }, { count: lancamentos }] = await Promise.all([
         supabase.from("metas").select("id", { count: "exact", head: true }).eq("is_demo", true),
         supabase.from("meta_lancamentos").select("id", { count: "exact", head: true }).eq("is_demo", true),
-        supabase.from("planos_acao").select("id", { count: "exact", head: true }).eq("is_demo", true),
       ]);
       return {
         metas: metas ?? 0,
         lancamentos: lancamentos ?? 0,
-        planos: planos ?? 0,
         hasDemo: (metas ?? 0) > 0,
       };
     },
@@ -131,39 +129,6 @@ const SEEDS: SeedMetaTpl[] = [
   },
 ];
 
-const DEMO_PLANOS: {
-  metaIndex: number;
-  titulo: string;
-  tarefas: { descricao: string; prazoOffset: number }[];
-}[] = [
-  {
-    metaIndex: 3, // Churn Rate
-    titulo: "Plano de retenção — reduzir churn em 30 dias",
-    tarefas: [
-      { descricao: "Mapear top 10 clientes com NPS < 6 e agendar call de saúde", prazoOffset: 5 },
-      { descricao: "Lançar fluxo de re-engajamento para contas inativas há 14+ dias", prazoOffset: 12 },
-      { descricao: "Implementar pesquisa pulse no primeiro mês de contrato", prazoOffset: 20 },
-      { descricao: "Revisar onboarding com foco em time-to-value", prazoOffset: 28 },
-    ],
-  },
-  {
-    metaIndex: 5, // CAC Marketing
-    titulo: "Sprint de eficiência de mídia",
-    tarefas: [
-      { descricao: "Pausar 3 campanhas com CAC > R$ 500 e CTR < 0,5%", prazoOffset: 3 },
-      { descricao: "Realocar budget para top 2 canais com payback < 4 meses", prazoOffset: 10 },
-      { descricao: "Testar 3 novos criativos com proposta de valor por segmento", prazoOffset: 21 },
-    ],
-  },
-];
-
-function daysAhead(d: number): string {
-  const dt = NOW();
-  dt.setDate(dt.getDate() + d);
-  return dt.toISOString().slice(0, 10);
-}
-
-
 export function useLoadDemoData() {
   const qc = useQueryClient();
   return useMutation({
@@ -240,37 +205,9 @@ export function useLoadDemoData() {
       const { error: lErr } = await supabase.from("meta_lancamentos").insert(lancRows);
       if (lErr) throw lErr;
 
-      // Insere planos + tarefas
-      for (const planoTpl of DEMO_PLANOS) {
-        const meta = createdMetas[planoTpl.metaIndex];
-        if (!meta) continue;
-        const { data: plano, error: pErr } = await supabase
-          .from("planos_acao")
-          .insert({
-            meta_id: meta.id,
-            titulo: planoTpl.titulo,
-            criado_por: uid,
-            is_demo: true,
-          })
-          .select()
-          .single();
-        if (pErr) throw pErr;
-
-        const tarefasRows = planoTpl.tarefas.map((t, ordem) => ({
-          plano_id: plano.id,
-          descricao: t.descricao,
-          prazo: daysAhead(t.prazoOffset),
-          ordem,
-          concluida: ordem === 0,
-        }));
-
-        const { error: tErr } = await supabase.from("plano_tarefas").insert(tarefasRows);
-        if (tErr) throw tErr;
-      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entregas"] });
-      qc.invalidateQueries({ queryKey: ["planos"] });
       qc.invalidateQueries({ queryKey: ["demo-status"] });
     },
   });
@@ -280,15 +217,11 @@ export function useClearDemoData() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      // Cascade: deletando metas demo, lançamentos/planos vinculados caem junto
-      // (mas planos podem ter is_demo independente — deletamos explicitamente também)
-      await supabase.from("planos_acao").delete().eq("is_demo", true);
       await supabase.from("meta_lancamentos").delete().eq("is_demo", true);
       await supabase.from("metas").delete().eq("is_demo", true);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entregas"] });
-      qc.invalidateQueries({ queryKey: ["planos"] });
       qc.invalidateQueries({ queryKey: ["demo-status"] });
     },
   });

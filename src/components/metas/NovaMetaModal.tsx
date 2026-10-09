@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AREAS, PERIODICIDADES, todayISO } from "@/lib/metas";
-import { useCreateMeta, useMembros } from "@/hooks/useMetas";
+import { useColaboradoresResponsaveis, useCreateMeta } from "@/hooks/useMetas";
 
 type Props = {
   open: boolean;
@@ -40,7 +40,12 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
   const [dataFim, setDataFim] = useState<string>("");
   const [isInverse, setIsInverse] = useState(false);
 
-  const { data: membros = [] } = useMembros();
+  const {
+    data: colaboradores = [],
+    isLoading: colaboradoresLoading,
+    isError: colaboradoresError,
+    error: colaboradoresQueryError,
+  } = useColaboradoresResponsaveis(open);
   const createMeta = useCreateMeta();
 
   const reset = () => {
@@ -61,18 +66,23 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
     const valor = Number(valorAlvo.replace(",", "."));
     if (!nome.trim()) return toast.error("Informe o nome da entrega.");
     if (!area) return toast.error("Selecione uma área.");
-    if (!Number.isFinite(valor) || valor <= 0)
-      return toast.error("Valor alvo precisa ser um número positivo.");
     if (!unidade.trim()) return toast.error("Informe a unidade (R$, %, leads, etc).");
     if (!dataInicio || !dataFim) return toast.error("Defina datas de início e fim.");
     if (dataFim < dataInicio) return toast.error("Data fim precisa ser após início.");
+
+    const responsavel = colaboradores.find(
+      (colaborador) => colaborador.id === responsavelId && colaborador.ativo,
+    );
+    if (responsavelId !== "__none__" && !responsavel) {
+      return toast.error("Selecione um colaborador ativo com conta vinculada.");
+    }
 
     try {
       await createMeta.mutateAsync({
         nome: nome.trim(),
         descricao: descricao.trim() || null,
         area,
-        responsavel_id: responsavelId === "__none__" ? null : responsavelId,
+        responsavel_id: responsavel?.id ?? null,
         valor_alvo: valor,
         valor_atual: 0,
         unidade: unidade.trim(),
@@ -135,40 +145,43 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Sem responsável</SelectItem>
-                  {membros.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.full_name}
-                    </SelectItem>
-                  ))}
+                  {colaboradoresLoading && (
+                    <SelectItem value="__loading__" disabled>Carregando colaboradores…</SelectItem>
+                  )}
+                  {colaboradoresError && (
+                    <SelectItem value="__error__" disabled>Não foi possível carregar colaboradores.</SelectItem>
+                  )}
+                  {!colaboradoresLoading && !colaboradoresError && colaboradores.length === 0 && (
+                    <SelectItem value="__empty__" disabled>Nenhum colaborador cadastrado.</SelectItem>
+                  )}
+                  {colaboradores.map((colaborador) => {
+                    const value = colaborador.id ?? `sem-conta:${colaborador.cadastroId}`;
+                    return (
+                      <SelectItem
+                        key={colaborador.cadastroId}
+                        value={value}
+                        disabled={!colaborador.id || !colaborador.ativo}
+                      >
+                        {colaborador.full_name}
+                        {!colaborador.ativo
+                          ? " — inativo"
+                          : !colaborador.id
+                            ? " — conta não vinculada"
+                            : ""}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
+              {colaboradoresError && (
+                <p role="alert" className="text-xs text-destructive">
+                  Não foi possível carregar os colaboradores: {colaboradoresQueryError.message}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="alvo">Valor alvo *</Label>
-              <Input
-                id="alvo"
-                type="text"
-                inputMode="decimal"
-                value={valorAlvo}
-                onChange={(e) => setValorAlvo(e.target.value)}
-                placeholder="120000"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="unidade">Unidade *</Label>
-              <Input
-                id="unidade"
-                value={unidade}
-                onChange={(e) => setUnidade(e.target.value)}
-                placeholder="R$"
-                required
-              />
-            </div>
-          </div>
+         
 
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
@@ -208,15 +221,6 @@ export function NovaMetaModal({ open, onOpenChange }: Props) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
-            <div className="space-y-0.5">
-              <Label className="cursor-pointer">Entrega inversa (menor é melhor)</Label>
-              <p className="text-xs text-muted-foreground">
-                Para churn, tempo de resposta, custos, etc.
-              </p>
-            </div>
-            <Switch checked={isInverse} onCheckedChange={setIsInverse} />
-          </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="desc">Descrição (opcional)</Label>

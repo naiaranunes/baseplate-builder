@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTeamManagement } from "@/hooks/useTeamManagement";
+import { useExcluirUsuario } from "@/hooks/useEntregas";
+import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Copy, UserPlus } from "lucide-react";
+import { Copy, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { AppRole } from "@/types/auth";
 
@@ -20,6 +22,13 @@ const ROLE_LABEL: Record<AppRole, string> = {
 
 export default function TeamSettings() {
   const { members, isLoading, approveMember, rejectMember, changeRole, deactivateMember, reactivateMember } = useTeamManagement();
+  const excluirUsuario = useExcluirUsuario();
+  const { user } = useAuth();
+  const excluir = async (id: string, nome: string) => {
+    if (!confirm(`Excluir definitivamente ${nome}? A pessoa perde o acesso ao sistema.`)) return;
+    try { await excluirUsuario.mutateAsync(id); toast.success("Usuário excluído"); }
+    catch (e) { toast.error((e as Error).message); }
+  };
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -154,6 +163,11 @@ export default function TeamSettings() {
                   )}
                   {m.is_approved && !m.is_active && (
                     <Button size="sm" onClick={() => reactivateMember.mutate(m.id)}>Reativar</Button>
+                  )}
+                  {m.id !== user?.id && (
+                    <Button size="sm" variant="destructive" aria-label={`Excluir ${m.full_name}`} onClick={() => excluir(m.id, m.full_name)} disabled={excluirUsuario.isPending}>
+                      <Trash2 className="h-4 w-4 mr-1" />Excluir
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>

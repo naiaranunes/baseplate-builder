@@ -33,7 +33,6 @@ const CANAL_LABEL: Record<string, string> = {
 const EVENTO_LABEL: Record<string, string> = {
   meta_risco: "Entrega em risco",
   meta_criada: "Nova entrega",
-  plano_criado: "Plano criado",
   resumo_semanal: "Resumo semanal",
   custom: "Personalizado",
 };
@@ -126,7 +125,7 @@ export default function NotificacoesSettings() {
           <div className="space-y-0.5">
             <Label className="cursor-pointer">Alertas automáticos via Slack</Label>
             <p className="text-xs text-muted-foreground">
-              Envia uma mensagem ao canal sempre que uma meta entra em risco (status vermelho).
+              Envia uma mensagem ao canal sempre que uma entrega entra em risco (status vermelho).
             </p>
           </div>
           <Switch
@@ -191,7 +190,7 @@ export default function NotificacoesSettings() {
           <div className="space-y-0.5">
             <Label className="cursor-pointer">Alertas automáticos via WhatsApp</Label>
             <p className="text-xs text-muted-foreground">
-              Envia uma mensagem pela Evolution API sempre que uma meta entra em risco.
+              Envia uma mensagem pela Evolution API sempre que uma entrega entra em risco.
             </p>
           </div>
           <Switch

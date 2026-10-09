@@ -210,7 +210,7 @@ export default function OnboardingPage() {
 
   const handleFinish = async () => {
     await completeOnboarding();
-    toast.success("Tudo pronto! Bem-vindo ao Gestão Wiadupla.");
+    toast.success("Tudo pronto! Bem-vindo ao Gestão de Entregas Wiadupla.");
     navigate("/dashboard", { replace: true });
   };
 
