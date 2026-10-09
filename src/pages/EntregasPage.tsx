@@ -49,7 +49,7 @@ export default function EntregasPage() {
   const { data: entregas, isLoading } = useEntregas();
   const { data: liderados } = useLiderados();
   const { user, isAdmin, isSupervisor } = useAuth();
-  const [novoOpen, setNovoOpen] = useState(false);
+  const [novoOpen, setNovoOpen] = useState(() => new URLSearchParams(window.location.search).has("nova"));
   const [selecionada, setSelecionada] = useState<Entrega | null>(null);
   const [pessoa, setPessoa] = useState("todos");
 

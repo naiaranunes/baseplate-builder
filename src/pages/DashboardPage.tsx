@@ -17,7 +17,6 @@ import {
 } from "@/lib/metas";
 import { StatusDot } from "@/components/metas/StatusChip";
 import { ProgressBar } from "@/components/metas/ProgressBar";
-import { NovaMetaModal } from "@/components/metas/NovaMetaModal";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -36,7 +35,6 @@ const STATUS_RANK: Record<Status, number> = { verde: 0, amarelo: 1, vermelho: 2 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { data: metas, isLoading } = useMetas();
-  const [novaOpen, setNovaOpen] = useState(false);
 
   const today = useMemo(
     () =>
@@ -99,7 +97,7 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground capitalize">{today}</p>
           </div>
           <Button
-            onClick={() => setNovaOpen(true)}
+            onClick={() => (window.location.href = "/entregas?nova=1")}
             style={{ backgroundColor: "var(--color-blue)", color: "white" }}
             className="hover:opacity-90"
           >
@@ -288,7 +286,6 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      <NovaMetaModal open={novaOpen} onOpenChange={setNovaOpen} />
     </AppShell>
   );
 }
