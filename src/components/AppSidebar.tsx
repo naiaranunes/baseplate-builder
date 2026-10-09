@@ -39,15 +39,14 @@ export function AppSidebar({
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
-  const { signOut, profile, role } = useAuth();
+  const { signOut, profile, isAdmin, isSupervisor } = useAuth();
+  const isLider = isAdmin || isSupervisor;
 
   const items: NavItem[] = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Equipe", url: "/equipe", icon: Users, roles: ["admin", "supervisor"] },
-    { title: "Agenda de Entregas", url: "/agenda-entregas", icon: PackageCheck, roles: ["admin", "supervisor"] },
-    { title: "Minhas Entregas", url: "/minhas-entregas", icon: Target, roles: ["agent"] },
-    { title: "Entregas", url: "/gestao-entregas", icon: ListChecks, roles: ["admin", "supervisor"] },
-    { title: "Relatórios", url: "/relatorios", icon: BarChart3, roles: ["admin", "supervisor"] },
+    ...(isLider ? [{ title: "Equipe", url: "/equipe", icon: Users }] : []),
+    { title: isLider ? "Agenda de Entregas" : "Minhas tarefas", url: "/entregas", icon: PackageCheck },
+    ...(isLider ? [{ title: "Relatórios", url: "/relatorios", icon: BarChart3 }] : []),
   ];
 
   const footerItems: NavItem[] = [

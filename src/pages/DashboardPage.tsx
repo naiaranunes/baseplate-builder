@@ -20,7 +20,6 @@ import {
 } from "@/lib/metas";
 import { StatusDot } from "@/components/metas/StatusChip";
 import { ProgressBar } from "@/components/metas/ProgressBar";
-import { NovaMetaModal } from "@/components/metas/NovaMetaModal";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -39,23 +38,6 @@ const STATUS_RANK: Record<Status, number> = { verde: 0, amarelo: 1, vermelho: 2 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { data: metas, isLoading } = useMetas();
-  const {
-    data: entregasAgendadas,
-    isLoading: entregasLoading,
-    isError: entregasError,
-    error: erroEntregas,
-  } = useEntregas();
-  const {
-    data: liderados,
-    isError: lideradosError,
-    error: erroLiderados,
-  } = useLiderados();
-  const [novaOpen, setNovaOpen] = useState(false);
-  const hoje = hojeISO();
-  const atrasadas = (entregasAgendadas ?? [])
-    .filter((entrega) => !isConcluida(entrega.status) && entrega.prazo < hoje)
-    .sort((a, b) => a.prazo.localeCompare(b.prazo));
-  const nomePorLiderado = new Map((liderados ?? []).map((liderado) => [liderado.id, liderado.nome]));
 
   const today = useMemo(
     () =>
@@ -117,7 +99,7 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground capitalize">{today}</p>
           </div>
           <Button
-            onClick={() => setNovaOpen(true)}
+            onClick={() => (window.location.href = "/entregas?nova=1")}
             style={{ backgroundColor: "var(--color-blue)", color: "white" }}
             className="hover:opacity-90"
           >
@@ -368,7 +350,6 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      <NovaMetaModal open={novaOpen} onOpenChange={setNovaOpen} />
     </AppShell>
   );
 }

@@ -123,23 +123,6 @@ const FAQS: FAQ[] = [
           <li>Previsão do valor final na data de término</li>
           <li>Veredicto "vai bater" / "não bate"</li>
         </ul>
-        Se quiser, clique em{" "}
-        <strong>Criar plano de ação com essas sugestões</strong> para
-        transformar as ações em um plano com tarefas.
-      </>
-    ),
-  },
-  {
-    q: "Como criar e acompanhar planos de ação?",
-    a: (
-      <>
-        Em{" "}
-        <Link to="/planos" className="font-medium" style={blueLink}>
-          Planos de Ação
-        </Link>{" "}
-        clique em <strong>Novo plano</strong>, vincule a uma entrega, adicione as
-        tarefas e defina o prazo de cada uma. Cada tarefa pode ser concluída
-        diretamente no card, e o progresso do plano é calculado automaticamente.
       </>
     ),
   },
@@ -191,7 +174,7 @@ const FAQS: FAQ[] = [
         <Link to="/configuracoes/demonstration" className="font-medium" style={blueLink}>
           Configurações → Demonstração
         </Link>{" "}
-        você popula a plataforma com entregas, lançamentos e planos fictícios para
+        você popula a plataforma com entregas e lançamentos fictícios para
         explorar todas as telas. Pode limpar a qualquer momento sem afetar dados
         reais.
       </>

@@ -33,8 +33,22 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1791490500000,
-      "tag": "0004_role_delivery_access",
+      "when": 1791400635268,
+      "tag": "0004_liderado_self_read",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791476928113,
+      "tag": "0005_entregas_lider_liderado",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791542713122,
+      "tag": "0006_supervisor_ve_colaboradores",
       "breakpoints": true
     }
   ]

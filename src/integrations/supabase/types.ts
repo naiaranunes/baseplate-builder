@@ -152,6 +152,7 @@ export type Database = {
           observacao_realizacao: string | null
           periodicidade: string
           prazo: string
+          prazo_hora: string | null
           status: string
           titulo: string
           updated_at: string
@@ -168,6 +169,7 @@ export type Database = {
           observacao_realizacao?: string | null
           periodicidade?: string
           prazo: string
+          prazo_hora?: string | null
           status?: string
           titulo: string
           updated_at?: string
@@ -184,6 +186,7 @@ export type Database = {
           observacao_realizacao?: string | null
           periodicidade?: string
           prazo?: string
+          prazo_hora?: string | null
           status?: string
           titulo?: string
           updated_at?: string
@@ -210,6 +213,7 @@ export type Database = {
           nome: string
           usuario_id: string | null
           updated_at: string
+          usuario_id: string | null
         }
         Insert: {
           area?: string | null
@@ -222,6 +226,7 @@ export type Database = {
           nome: string
           usuario_id?: string | null
           updated_at?: string
+          usuario_id?: string | null
         }
         Update: {
           area?: string | null
@@ -234,6 +239,7 @@ export type Database = {
           nome?: string
           usuario_id?: string | null
           updated_at?: string
+          usuario_id?: string | null
         }
         Relationships: []
       }
@@ -622,6 +628,21 @@ export type Database = {
       }
     }
     Functions: {
+      admin_set_user_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_set_user_status: {
+        Args: {
+          p_is_active: boolean
+          p_is_approved: boolean
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       calcular_status_meta: {
         Args: {
           p_data_fim: string
@@ -632,16 +653,10 @@ export type Database = {
         }
         Returns: string
       }
-      admin_set_user_role: {
-        Args: { p_role: Database["public"]["Enums"]["app_role"]; p_user_id: string }
-        Returns: undefined
-      }
-      admin_set_user_status: {
-        Args: { p_is_active: boolean; p_is_approved: boolean; p_user_id: string }
-        Returns: undefined
-      }
-      ensure_auth_trigger: { Args: never; Returns: Json }
       claim_my_liderado: { Args: never; Returns: boolean }
+      e_meu_cadastro: { Args: { _lid: string }; Returns: boolean }
+      ensure_auth_trigger: { Args: never; Returns: Json }
+      gerencia_liderado: { Args: { _lid: string }; Returns: boolean }
       get_handle_new_user_def: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -665,10 +680,14 @@ export type Database = {
           id: string
         }[]
       }
+      pode_ver_entrega: {
+        Args: { _criador: string; _lid: string; _lider: string }
+        Returns: boolean
+      }
       read_vault_secret: { Args: { p_key: string }; Returns: string }
       registrar_realizacao_entrega: {
-        Args: { p_data: string; p_entrega_id: string; p_observacao?: string | null }
-        Returns: string | null
+        Args: { p_data: string; p_entrega_id: string; p_observacao?: string }
+        Returns: string
       }
       store_vault_secret: {
         Args: { p_key: string; p_value: string }

@@ -18,6 +18,7 @@ export function useNotificationTemplates() {
       const { data, error } = await supabase
         .from("notification_templates")
         .select("*")
+        .neq("evento", "plano_criado")
         .order("is_custom", { ascending: true })
         .order("created_at", { ascending: true });
       if (error) throw error;

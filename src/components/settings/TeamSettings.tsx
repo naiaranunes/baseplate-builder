@@ -1,51 +1,29 @@
 import { useState, useMemo } from "react";
 import { useTeamManagement } from "@/hooks/useTeamManagement";
+import { useExcluirUsuario } from "@/hooks/useEntregas";
+import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Copy, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { ROLE_LABEL, type AppRole } from "@/types/auth";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function TeamSettings() {
-  const {
-    members,
-    isLoading,
-    approveMember,
-    rejectMember,
-    changeRole,
-    deactivateMember,
-    reactivateMember,
-    deleteMember,
-  } = useTeamManagement();
+  const { members, isLoading, approveMember, rejectMember, changeRole, deactivateMember, reactivateMember } = useTeamManagement();
+  const excluirUsuario = useExcluirUsuario();
   const { user } = useAuth();
-
+  const excluir = async (id: string, nome: string) => {
+    if (!confirm(`Excluir definitivamente ${nome}? A pessoa perde o acesso ao sistema.`)) return;
+    try { await excluirUsuario.mutateAsync(id); toast.success("Usuário excluído"); }
+    catch (e) { toast.error((e as Error).message); }
+  };
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -148,12 +126,87 @@ export default function TeamSettings() {
 
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="text-center text-muted-foreground py-8"
-                >
-                  Carregando...
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum membro</TableCell></TableRow>
+            ) : filtered.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={m.avatar_url ?? undefined} />
+                      <AvatarFallback>{m.full_name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span>{m.full_name}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground">{m.email}</TableCell>
+                <TableCell>
+                  <Select
+                    value={m.role ?? "agent"}
+                    onValueChange={(v) => changeRole.mutate({ userId: m.id, newRole: v as AppRole })}
+                  >
+                    <SelectTrigger
+                      className="w-[140px] h-9 font-medium"
+                      style={{
+                        backgroundColor: "#FFFFFF",
+                        color: "var(--text)",
+                        borderColor: "var(--border-hex)",
+                      }}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent
+                      style={{
+                        backgroundColor: "#FFFFFF",
+                        color: "var(--text)",
+                        borderColor: "var(--border-hex)",
+                      }}
+                    >
+                      <SelectItem
+                        value="admin"
+                        className="cursor-pointer focus:bg-[var(--bg)] focus:text-[var(--text)] data-[state=checked]:bg-[var(--bg)]"
+                      >
+                        {ROLE_LABEL.admin}
+                      </SelectItem>
+                      <SelectItem
+                        value="supervisor"
+                        className="cursor-pointer focus:bg-[var(--bg)] focus:text-[var(--text)] data-[state=checked]:bg-[var(--bg)]"
+                      >
+                        {ROLE_LABEL.supervisor}
+                      </SelectItem>
+                      <SelectItem
+                        value="agent"
+                        className="cursor-pointer focus:bg-[var(--bg)] focus:text-[var(--text)] data-[state=checked]:bg-[var(--bg)]"
+                      >
+                        {ROLE_LABEL.agent}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  {!m.is_approved && <Badge className="bg-warning text-warning-foreground">Pendente</Badge>}
+                  {m.is_approved && m.is_active && <Badge className="bg-success text-success-foreground">Ativo</Badge>}
+                  {m.is_approved && !m.is_active && <Badge variant="destructive">Inativo</Badge>}
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  {!m.is_approved && (
+                    <>
+                      <Button size="sm" onClick={() => approveMember.mutate(m.id)}>Aprovar</Button>
+                      <Button size="sm" variant="outline" onClick={() => rejectMember.mutate(m.id)}>Rejeitar</Button>
+                    </>
+                  )}
+                  {m.is_approved && m.is_active && (
+                    <Button size="sm" variant="outline" onClick={() => deactivateMember.mutate(m.id)}>Desativar</Button>
+                  )}
+                  {m.is_approved && !m.is_active && (
+                    <Button size="sm" onClick={() => reactivateMember.mutate(m.id)}>Reativar</Button>
+                  )}
+                  {m.id !== user?.id && (
+                    <Button size="sm" variant="destructive" aria-label={`Excluir ${m.full_name}`} onClick={() => excluir(m.id, m.full_name)} disabled={excluirUsuario.isPending}>
+                      <Trash2 className="h-4 w-4 mr-1" />Excluir
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (

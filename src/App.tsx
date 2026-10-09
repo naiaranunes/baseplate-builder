@@ -15,9 +15,6 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import DashboardPage from "./pages/DashboardPage";
-import ColaboradorDashboardPage from "./pages/ColaboradorDashboardPage";
-import MetasPage from "./pages/MetasPage";
-import AnaliseMetaPage from "./pages/AnaliseMetaPage";
 import EntregasPage from "./pages/EntregasPage";
 import EquipePage from "@/pages/EquipePage";
 import RelatoriosPage from "./pages/RelatoriosPage";
@@ -142,32 +139,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <RoleDashboardPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route path="/gestao-entregas" element={
-                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
-                  <MetasPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/entregas" element={<LegacyDeliveriesRedirect />} />
-            <Route path="/metas" element={<LegacyMetasRedirect />} />
-            <Route
-              path="/metas/:id/analise"
-              element={
-                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
-                  <LegacyMetaAnalysisRedirect />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/entregas/:id/analise"
-              element={
-                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
-                  <AnaliseMetaPage />
                 </ProtectedRoute>
               }
             />
