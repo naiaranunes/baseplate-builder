@@ -42,7 +42,7 @@ describe("ColaboradorDashboardPage", () => {
 
     expect(screen.getByRole("heading", { name: "Olá, Ana!" })).toBeInTheDocument();
     expect(screen.getByText("Enviar relatório")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Registrar/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Entregar/ })).toHaveAttribute(
       "href",
       "/minhas-entregas?entrega=delivery-1",
     );

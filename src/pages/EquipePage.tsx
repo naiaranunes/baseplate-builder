@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TeamSettings from "@/components/settings/TeamSettings";
 import { useAuth } from "@/hooks/useAuth";
-import { useExcluirLiderado, useLideres, useLiderados, useSalvarLiderado, type Liderado } from "@/hooks/useEntregas";
+import { useConvidarColaborador, useExcluirLiderado, useLideres, useLiderados, useSalvarLiderado, type Liderado } from "@/hooks/useEntregas";
 
 const AREAS_SUGERIDAS = ["Diretoria Comercial e Operações", "Obras", "Comercial/Vendas", "Administrativo", "Marketing", "Produção"];
 
@@ -25,6 +25,7 @@ export default function EquipePage() {
   const { data: liderados, isLoading } = useLiderados();
   const { data: lideres } = useLideres();
   const salvar = useSalvarLiderado();
+  const convidar = useConvidarColaborador();
   const excluir = useExcluirLiderado();
 
   const [busca, setBusca] = useState("");
@@ -59,11 +60,25 @@ export default function EquipePage() {
     const email = form.email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Informe um e-mail válido para o colaborador.");
     if (!form.gestor_id) return toast.error("Selecione o líder responsável.");
+    const novoColaborador = !form.id;
     try {
-      await salvar.mutateAsync({ id: form.id, nome: form.nome.trim(), email, cargo: form.cargo || null, area: form.area || null, gestor_id: form.gestor_id, ativo: form.ativo });
-      toast.success(form.id ? "Colaborador atualizado." : "Colaborador cadastrado.");
+      const lideradoId = await salvar.mutateAsync({ id: form.id, nome: form.nome.trim(), email, cargo: form.cargo || null, area: form.area || null, gestor_id: form.gestor_id, ativo: form.ativo });
       setForm(null);
-    } catch (e) { toast.error((e as Error).message); }
+      if (!novoColaborador) {
+        toast.success("Colaborador atualizado.");
+        return;
+      }
+      try {
+        const status = await convidar.mutateAsync(lideradoId);
+        if (status === "sent") {
+          toast.success(`Colaborador cadastrado. Convite enviado para ${email}.`);
+        } else {
+          toast.info("Colaborador cadastrado. Este e-mail já possui uma conta e pode entrar com o login existente.");
+        }
+      } catch (error) {
+        toast.error(`Colaborador cadastrado, mas o convite não foi enviado: ${(error as Error).message}`);
+      }
+    } catch (error) { toast.error((error as Error).message); }
   };
 
   const alternarStatus = async (l: Liderado) => {
@@ -178,10 +193,17 @@ export default function EquipePage() {
             <div className="space-y-3">
               <div><Label>Nome completo</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
               <div>
-                <Label>E-mail do colaborador *</Label>
-                <Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <Label htmlFor="team-member-invite-email">E-mail para convite *</Label>
+                <Input
+                  id="team-member-invite-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
                 <p className="text-xs text-muted-foreground mt-1">
-                  O colaborador deve criar a conta com este mesmo e-mail para acessar as entregas atribuídas.
+                  O convite para entrar na plataforma e concluir o cadastro será enviado para este endereço.
                 </p>
               </div>
               <div><Label>Cargo/Função</Label><Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} /></div>
@@ -213,7 +235,7 @@ export default function EquipePage() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setForm(null)}>Cancelar</Button>
-            <Button onClick={enviar} disabled={salvar.isPending}>Salvar</Button>
+            <Button onClick={enviar} disabled={salvar.isPending || convidar.isPending}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

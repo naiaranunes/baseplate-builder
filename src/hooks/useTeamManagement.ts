@@ -8,6 +8,26 @@ export interface TeamMember extends Profile {
   role: AppRole | null;
 }
 
+async function functionErrorMessage(error: Error & { context?: unknown }): Promise<string> {
+  if (error.context instanceof Response) {
+    const response = error.context;
+    const text = await response.text();
+    try {
+      const body: unknown = JSON.parse(text);
+      if (body && typeof body === "object" && "error" in body && typeof body.error === "string") {
+        return body.error;
+      }
+      if (body && typeof body === "object" && "message" in body && typeof body.message === "string") {
+        return body.message;
+      }
+    } catch {
+      if (text) return `Falha ao excluir usuário (HTTP ${response.status}): ${text}`;
+    }
+    return `Falha ao excluir usuário (HTTP ${response.status}).`;
+  }
+  return error.message || "Erro ao excluir usuário.";
+}
+
 export function useTeamManagement() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -96,7 +116,7 @@ export function useTeamManagement() {
       const { data, error } = await supabase.functions.invoke("delete-user", {
         body: { user_id: userId },
       });
-      if (error) throw error;
+      if (error) throw new Error(await functionErrorMessage(error));
       if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {

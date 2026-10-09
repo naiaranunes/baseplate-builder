@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  type Entrega, type Liderado, useAddComentario, useCreateEntrega, useEntregas, useExcluirEntrega, useExcluirLiderado,
+  type Entrega, type Liderado, useAddComentario, useConvidarColaborador, useCreateEntrega, useEntregas, useExcluirEntrega, useExcluirLiderado,
   useHistorico, useLiderados, useMembros, useRegistrarRealizacao, useSalvarLiderado, useUpdateStatus,
 } from "@/hooks/useEntregas";
 import {
@@ -27,7 +27,6 @@ const STATUS_VARIANT: Record<StatusExibido, "default" | "secondary" | "destructi
   pendente: "outline", em_andamento: "secondary", entregue: "default", aprovada: "default", devolvida: "destructive", atrasada: "destructive",
 };
 const fmt = (d: string) => new Date(d + (d.length === 10 ? "T00:00:00" : "")).toLocaleDateString("pt-BR");
-const addDias = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 
 function StatusBadge({ e }: { e: Entrega }) {
   const s = statusExibido(e.status, e.prazo);
@@ -175,14 +174,16 @@ function MinhasEntregas({ entregas, onOpen }: { entregas: Entrega[]; onOpen: (en
               <td className="p-3 text-right">
                 {!isConcluida(entrega.status) && (
                   <Button
-                    size="sm"
+                    size="icon"
                     variant="outline"
+                    aria-label={`Entregar ${entrega.titulo}`}
+                    title="Entregar"
                     onClick={(event) => {
                       event.stopPropagation();
                       onOpen(entrega);
                     }}
                   >
-                    Registrar
+                    <CheckCircle2 className="h-4 w-4" />
                   </Button>
                 )}
               </td>
@@ -220,22 +221,10 @@ function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome
 }
 
 function Agenda({ entregas, nome, onOpen }: { entregas: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void }) {
-  const hoje = hojeISO(); const semana = addDias(7);
-  const abertas = entregas.filter((e) => !isConcluida(e.status));
-  const grupos = [
-    { t: "Atrasadas", itens: abertas.filter((e) => e.prazo < hoje), vazio: "Nenhuma entrega atrasada." },
-    { t: "Vencem hoje", itens: abertas.filter((e) => e.prazo === hoje), vazio: "Nada vence hoje." },
-    { t: "Próximos 7 dias", itens: abertas.filter((e) => e.prazo > hoje && e.prazo <= semana), vazio: "Nada previsto para a semana." },
-    { t: "Mais adiante", itens: abertas.filter((e) => e.prazo > semana), vazio: "Nada previsto." },
-  ];
+  const ordenadas = [...entregas].sort((a, b) => a.prazo.localeCompare(b.prazo));
   return (
-    <div className="space-y-4 mt-4">
-      {grupos.map((g) => (
-        <div key={g.t} className="metasia-card">
-          <h3 className="font-semibold px-4 pt-4">{g.t} <span className="text-muted-foreground font-normal">({g.itens.length})</span></h3>
-          <TabelaEntregas itens={g.itens} nome={nome} onOpen={onOpen} vazio={g.vazio} />
-        </div>
-      ))}
+    <div className="metasia-card mt-4 overflow-x-auto">
+      <TabelaEntregas itens={ordenadas} nome={nome} onOpen={onOpen} vazio="Nenhuma entrega agendada." />
     </div>
   );
 }
@@ -291,6 +280,7 @@ function HistoricoGeral({ entregas, nome, onOpen }: { entregas: Entrega[]; nome:
 
 function LideradosTab({ liderados, entregas }: { liderados: Liderado[]; entregas: Entrega[] }) {
   const salvar = useSalvarLiderado();
+  const convidar = useConvidarColaborador();
   const excluir = useExcluirLiderado();
   const [edit, setEdit] = useState<Partial<Liderado> | null>(null);
 
@@ -298,10 +288,25 @@ function LideradosTab({ liderados, entregas }: { liderados: Liderado[]; entregas
     if (!edit?.nome?.trim()) return toast.error("Informe o nome.");
     const email = edit.email?.trim().toLowerCase() ?? "";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Informe um e-mail válido para o colaborador.");
+    const novoColaborador = !edit.id;
     try {
-      await salvar.mutateAsync({ id: edit.id, nome: edit.nome.trim(), cargo: edit.cargo || null, email, ativo: edit.ativo ?? true });
-      toast.success("Colaborador salvo."); setEdit(null);
-    } catch (e) { toast.error((e as Error).message); }
+      const lideradoId = await salvar.mutateAsync({ id: edit.id, nome: edit.nome.trim(), cargo: edit.cargo || null, email, ativo: edit.ativo ?? true });
+      setEdit(null);
+      if (!novoColaborador) {
+        toast.success("Colaborador salvo.");
+        return;
+      }
+      try {
+        const status = await convidar.mutateAsync(lideradoId);
+        if (status === "sent") {
+          toast.success(`Colaborador cadastrado. Convite enviado para ${email}.`);
+        } else {
+          toast.info("Colaborador cadastrado. Este e-mail já possui uma conta e pode entrar com o login existente.");
+        }
+      } catch (error) {
+        toast.error(`Colaborador cadastrado, mas o convite não foi enviado: ${(error as Error).message}`);
+      }
+    } catch (error) { toast.error((error as Error).message); }
   };
 
   return (
@@ -333,7 +338,20 @@ function LideradosTab({ liderados, entregas }: { liderados: Liderado[]; entregas
           <div className="space-y-3">
             <div><Label>Nome *</Label><Input value={edit?.nome ?? ""} onChange={(e) => setEdit({ ...edit, nome: e.target.value })} /></div>
             <div><Label>Cargo</Label><Input value={edit?.cargo ?? ""} onChange={(e) => setEdit({ ...edit, cargo: e.target.value })} /></div>
-            <div><Label>E-mail *</Label><Input type="email" required value={edit?.email ?? ""} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
+            <div>
+              <Label htmlFor="delivery-member-invite-email">E-mail para convite *</Label>
+              <Input
+                id="delivery-member-invite-email"
+                type="email"
+                autoComplete="email"
+                required
+                value={edit?.email ?? ""}
+                onChange={(e) => setEdit({ ...edit, email: e.target.value })}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                O convite para entrar na plataforma e concluir o cadastro será enviado para este endereço.
+              </p>
+            </div>
             <div><Label>Situação</Label>
               <Select value={edit?.ativo === false ? "inativo" : "ativo"} onValueChange={(v) => setEdit({ ...edit, ativo: v === "ativo" })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -341,7 +359,7 @@ function LideradosTab({ liderados, entregas }: { liderados: Liderado[]; entregas
               </Select>
             </div>
           </div>
-          <DialogFooter><Button onClick={onSalvar} disabled={salvar.isPending}>Salvar</Button></DialogFooter>
+          <DialogFooter><Button onClick={onSalvar} disabled={salvar.isPending || convidar.isPending}>Salvar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -468,7 +486,7 @@ function DetalheEntrega({
                   <h3 className="font-semibold">Registrar realização</h3>
                   <div><Label>Data da entrega</Label><Input type="date" value={dataReal} onChange={(e) => setDataReal(e.target.value)} /></div>
                   <div><Label>Observação</Label><Textarea value={obs} onChange={(e) => setObs(e.target.value)} /></div>
-                  <Button onClick={onRegistrar} disabled={registrar.isPending}><CheckCircle2 className="h-4 w-4 mr-1.5" />Marcar como entregue</Button>
+                  <Button onClick={onRegistrar} disabled={registrar.isPending}><CheckCircle2 className="h-4 w-4 mr-1.5" />Marcar como finalizado</Button>
                 </div>
               )}
 
@@ -501,7 +519,7 @@ function DetalheEntrega({
                 </ul>
               </div>
 
-              {canManage && (
+              {canManage && !isMine && (
                 <Button variant="ghost" className="text-destructive" onClick={async () => { if (confirm("Excluir esta entrega?")) { await excluir.mutateAsync(entrega.id); fechar(); } }}>
                   <Trash2 className="h-4 w-4 mr-1.5" />Excluir entrega
                 </Button>

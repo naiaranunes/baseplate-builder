@@ -28,6 +28,7 @@ export interface AuthContextValue {
   profile: Profile | null;
   role: AppRole | null;
   isLoading: boolean;
+  isPasswordRecovery: boolean;
   isAdmin: boolean;
   isSupervisor: boolean;
   isAgent: boolean;
@@ -37,5 +38,6 @@ export interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<{ error?: string; isApproved?: boolean; isActive?: boolean; role?: AppRole }>;
   signUp: (fullName: string, email: string, password: string) => Promise<{ error?: string; pending?: boolean; isApproved?: boolean; role?: AppRole }>;
   signOut: () => Promise<void>;
+  clearPasswordRecovery: () => void;
   refreshProfile: () => Promise<void>;
 }

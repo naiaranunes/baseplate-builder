@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { RecoveryRedirect } from "@/components/auth/RecoveryRedirect";
 import { supabase } from "@/integrations/supabase/client";
 
 import AuthPage from "./pages/AuthPage";
@@ -103,6 +104,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <TriggerHealthCheck />
+          <RecoveryRedirect />
 
           <Routes>
             {/* Página inicial */}

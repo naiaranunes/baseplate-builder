@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,14 +71,35 @@ export function useSalvarLiderado() {
   return useMutation({
     mutationFn: async (input: { id?: string; nome: string; cargo?: string | null; email?: string | null; area?: string | null; gestor_id?: string; ativo?: boolean }) => {
       const { id, ...rest } = input;
-      const { error } = id
-        ? await supabase.from("liderados").update(rest).eq("id", id)
-        : await supabase.from("liderados").insert(rest);
+      if (id) {
+        const { error } = await supabase.from("liderados").update(rest).eq("id", id);
+        if (error) throw error;
+        return id;
+      }
+
+      const { data, error } = await supabase.from("liderados").insert(rest).select("id").single();
       if (error) throw error;
+      return data.id;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["liderados"] });
       qc.invalidateQueries({ queryKey: ["colaboradores-responsaveis"] });
+    },
+  });
+}
+
+export function useConvidarColaborador() {
+  return useMutation({
+    mutationFn: async (lideradoId: string): Promise<"sent" | "already_registered"> => {
+      const { data, error } = await supabase.functions.invoke("convidar-colaborador", {
+        body: { liderado_id: lideradoId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.status !== "sent" && data?.status !== "already_registered") {
+        throw new Error("Resposta inesperada ao enviar o convite.");
+      }
+      return data.status;
     },
   });
 }
@@ -108,6 +130,27 @@ export function useExcluirLiderado() {
 
 export function useEntregas() {
   const { user } = useAuth();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`entregas:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "entregas" },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["entregas"] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc, user?.id]);
+
   return useQuery({
     queryKey: ["entregas", user?.id],
     queryFn: async () => {

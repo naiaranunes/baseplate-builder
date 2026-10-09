@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { noPrazo, proximoPrazo, statusExibido } from "./entregas";
+import { noPrazo, proximoPrazo, statusExibido, STATUS_LABEL } from "./entregas";
+
+describe("STATUS_LABEL", () => {
+  it("exibe entregas concluídas como finalizadas", () => {
+    expect(STATUS_LABEL.entregue).toBe("Finalizado");
+  });
+});
 
 describe("statusExibido", () => {
   it("marca como atrasada quando o prazo passou e está pendente", () => {

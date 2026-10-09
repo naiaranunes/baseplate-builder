@@ -60,7 +60,7 @@ export default function ColaboradorDashboardPage() {
               <SummaryCard label="Pendentes" value={abertas.length} icon={<PackageCheck className="h-4 w-4" />} />
               <SummaryCard label="Atrasadas" value={atrasadas.length} icon={<AlertTriangle className="h-4 w-4" />} />
               <SummaryCard label="No prazo" value={previstas.length} icon={<CalendarClock className="h-4 w-4" />} />
-              <SummaryCard label="Concluídas" value={concluidas.length} icon={<CheckCircle2 className="h-4 w-4" />} />
+              <SummaryCard label="Finalizadas" value={concluidas.length} icon={<CheckCircle2 className="h-4 w-4" />} />
             </section>
 
             <section className="space-y-3">
@@ -104,7 +104,7 @@ export default function ColaboradorDashboardPage() {
                           <Badge variant={status === "atrasada" || status === "devolvida" ? "destructive" : "outline"}>
                             {STATUS_LABEL[status]}
                           </Badge>
-                          <span className="text-sm font-medium text-primary">Registrar</span>
+                          <span className="text-sm font-medium text-primary">Entregar</span>
                         </div>
                       </Link>
                     );

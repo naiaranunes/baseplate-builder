@@ -5,7 +5,7 @@ export type Periodicidade = "unica" | "diaria" | "semanal" | "quinzenal" | "mens
 export const STATUS_LABEL: Record<StatusExibido, string> = {
   pendente: "Pendente",
   em_andamento: "Em andamento",
-  entregue: "Entregue",
+  entregue: "Finalizado",
   aprovada: "Aprovada",
   devolvida: "Devolvida",
   atrasada: "Atrasada",

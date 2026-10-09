@@ -10,6 +10,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const loadedFor = useRef<string | null>(null);
   const accessTokenRef = useRef<string | null>(null);
 
@@ -45,7 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (event === "PASSWORD_RECOVERY") setIsPasswordRecovery(true);
+      if (event === "SIGNED_OUT") setIsPasswordRecovery(false);
       const nextUser = sess?.user ?? null;
       accessTokenRef.current = sess?.access_token ?? null;
       // Keep context stable on TOKEN_REFRESHED / tab-focus when the user has not changed.
@@ -209,16 +212,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await loadProfileAndRole(user.id);
   }, [user, loadProfileAndRole]);
 
+  const clearPasswordRecovery = useCallback(() => setIsPasswordRecovery(false), []);
+
   const value = useMemo<AuthContextValue>(() => ({
-    user, session, profile, role, isLoading,
+    user, session, profile, role, isLoading, isPasswordRecovery,
     isAdmin: role === "admin",
     isSupervisor: role === "supervisor",
     isAgent: role === "agent",
     isApproved: !!profile?.is_approved,
     isActive: profile ? profile.is_active : true,
     isPendingApproval: !!profile && profile.is_active && !profile.is_approved,
-    signIn, signUp, signOut, refreshProfile,
-  }), [user, session, profile, role, isLoading, signIn, signUp, signOut, refreshProfile]);
+    signIn, signUp, signOut, clearPasswordRecovery, refreshProfile,
+  }), [user, session, profile, role, isLoading, isPasswordRecovery, signIn, signUp, signOut, clearPasswordRecovery, refreshProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

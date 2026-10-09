@@ -75,11 +75,13 @@ export function AppSidebar({
       <SidebarContent className="px-2 pt-4">
         {!collapsed && (
           <div className="px-3 mb-6 select-none">
-            <div className="text-[hsl(var(--sidebar-foreground))] text-xl font-black tracking-tight leading-none">
-              Gestão <span style={{ color: "var(--color-blue-hover)" }}>Wiadupla</span>
-            </div>
-            <div className="text-[10px] uppercase tracking-widest text-[hsl(var(--sidebar-foreground))]/55 mt-1">
-              Gestão de Entregas & resultados
+            <img
+              src="/wiadupla-logo.png"
+              alt="Wiadupla - Serviço de Pavimentação"
+              className="w-full max-w-[180px] h-auto"
+            />
+            <div className="text-[10px] uppercase tracking-widest text-[hsl(var(--sidebar-foreground))]/65 mt-2">
+              Gestão de Entregas
             </div>
           </div>
         )}

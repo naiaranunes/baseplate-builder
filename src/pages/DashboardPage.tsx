@@ -2,10 +2,13 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Sparkles, Target, TrendingUp, AlertTriangle, AlertCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { useEntregas, useLiderados, type Entrega } from "@/hooks/useEntregas";
 import { useMetas } from "@/hooks/useMetas";
+import { hojeISO, isConcluida } from "@/lib/entregas";
 import {
   AREAS,
   desvioPercentual,
@@ -36,7 +39,23 @@ const STATUS_RANK: Record<Status, number> = { verde: 0, amarelo: 1, vermelho: 2 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { data: metas, isLoading } = useMetas();
+  const {
+    data: entregasAgendadas,
+    isLoading: entregasLoading,
+    isError: entregasError,
+    error: erroEntregas,
+  } = useEntregas();
+  const {
+    data: liderados,
+    isError: lideradosError,
+    error: erroLiderados,
+  } = useLiderados();
   const [novaOpen, setNovaOpen] = useState(false);
+  const hoje = hojeISO();
+  const atrasadas = (entregasAgendadas ?? [])
+    .filter((entrega) => !isConcluida(entrega.status) && entrega.prazo < hoje)
+    .sort((a, b) => a.prazo.localeCompare(b.prazo));
+  const nomePorLiderado = new Map((liderados ?? []).map((liderado) => [liderado.id, liderado.nome]));
 
   const today = useMemo(
     () =>
@@ -53,8 +72,7 @@ export default function DashboardPage() {
     return {
       total: all.length,
       verde: all.filter((m) => m.status === "verde").length,
-      amarelo: all.filter((m) => m.status === "amarelo").length,
-      vermelho: all.filter((m) => m.status === "vermelho").length,
+      emRisco: all.filter((m) => m.status === "amarelo" || m.status === "vermelho").length,
     };
   }, [metas]);
 
@@ -79,7 +97,7 @@ export default function DashboardPage() {
     }[];
   }, [metas]);
 
-  const emAtencao = useMemo(() => {
+  const emRisco = useMemo(() => {
     return (metas ?? [])
       .filter((m) => m.status === "amarelo" || m.status === "vermelho")
       .sort((a, b) => STATUS_RANK[b.status as Status] - STATUS_RANK[a.status as Status])
@@ -109,7 +127,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <SummaryCard
             label="Total de Entregas"
             value={summary.total}
@@ -127,22 +145,84 @@ export default function DashboardPage() {
             loading={isLoading}
           />
           <SummaryCard
-            label="Em atenção"
-            value={summary.amarelo}
-            icon={<AlertTriangle className="h-4 w-4" />}
-            color={STATUS_COLOR.amarelo.fg}
-            bg={STATUS_COLOR.amarelo.bg}
-            loading={isLoading}
-          />
-          <SummaryCard
             label="Em risco"
-            value={summary.vermelho}
+            value={summary.emRisco}
             icon={<AlertCircle className="h-4 w-4" />}
             color={STATUS_COLOR.vermelho.fg}
             bg={STATUS_COLOR.vermelho.bg}
             loading={isLoading}
           />
+          <SummaryCard
+            label="Entregas atrasadas"
+            value={atrasadas.length}
+            icon={<AlertTriangle className="h-4 w-4" />}
+            color="var(--color-red)"
+            bg="var(--color-red-bg)"
+            loading={entregasLoading}
+          />
         </div>
+
+        <section>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              Entregas atrasadas
+            </h2>
+            <Link
+              to="/agenda-entregas"
+              className="text-xs font-medium hover:underline"
+              style={{ color: "var(--color-blue)" }}
+            >
+              Abrir agenda →
+            </Link>
+          </div>
+          {entregasLoading ? (
+            <Skeleton className="h-32 w-full" />
+          ) : entregasError ? (
+            <div role="alert" className="metasia-card p-5 text-sm text-destructive">
+              Não foi possível carregar as entregas atrasadas: {erroEntregas.message}
+            </div>
+          ) : lideradosError ? (
+            <div role="alert" className="metasia-card p-5 text-sm text-destructive">
+              Não foi possível carregar os nomes dos colaboradores: {erroLiderados.message}
+            </div>
+          ) : atrasadas.length === 0 ? (
+            <div className="metasia-card p-5 text-sm text-muted-foreground">
+              Nenhuma entrega em atraso.
+            </div>
+          ) : (
+            <div className="metasia-card overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-left">
+                  <tr>
+                    <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Entrega
+                    </th>
+                    <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Colaborador
+                    </th>
+                    <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Prazo
+                    </th>
+                    <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
+                      Situação
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {atrasadas.map((entrega) => (
+                    <OverdueDeliveryRow
+                      key={entrega.id}
+                      entrega={entrega}
+                      nome={entrega.liderado_cadastro_id
+                        ? nomePorLiderado.get(entrega.liderado_cadastro_id) ?? "—"
+                        : "—"}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
         {/* Painel de saúde por área */}
         <section>
@@ -168,13 +248,13 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* Tabela em atenção */}
+        {/* Tabela de entregas em risco */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              Entregas em Atenção até Agora
+              Entregas em risco
             </h2>
-            {emAtencao.length > 0 && (
+            {emRisco.length > 0 && (
               <Link
                 to="/gestao-entregas"
                 className="text-xs font-medium hover:underline"
@@ -186,14 +266,14 @@ export default function DashboardPage() {
           </div>
           {isLoading ? (
             <Skeleton className="h-48 w-full" />
-          ) : emAtencao.length === 0 ? (
+          ) : emRisco.length === 0 ? (
             <div
               className="metasia-card p-8 text-center text-sm"
               style={{ borderLeft: `3px solid ${STATUS_COLOR.verde.fg}` }}
             >
               <div className="mb-2 font-medium">Tudo no prazo 🎉</div>
               <div className="text-muted-foreground">
-                Nenhuma Entrega em atenção ou risco no momento.
+                Nenhuma entrega em risco no momento.
               </div>
             </div>
           ) : (
@@ -218,7 +298,7 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {emAtencao.map((m) => {
+                    {emRisco.map((m) => {
                       const status = m.status as Status;
                       const real = progressoReal(m.valor_atual, m.valor_alvo, m.is_inverse);
                       const desvio = desvioPercentual(m);
@@ -290,6 +370,24 @@ export default function DashboardPage() {
 
       <NovaMetaModal open={novaOpen} onOpenChange={setNovaOpen} />
     </AppShell>
+  );
+}
+
+function OverdueDeliveryRow({ entrega, nome }: { entrega: Entrega; nome: string }) {
+  return (
+    <tr className="border-t hover:bg-muted/30">
+      <td className="px-4 py-3 font-medium">
+        <Link
+          to={`/agenda-entregas?entrega=${encodeURIComponent(entrega.id)}`}
+          className="hover:underline"
+        >
+          {entrega.titulo}
+        </Link>
+      </td>
+      <td className="px-4 py-3">{nome}</td>
+      <td className="px-4 py-3">{new Date(`${entrega.prazo}T00:00:00`).toLocaleDateString("pt-BR")}</td>
+      <td className="px-4 py-3"><Badge variant="destructive">Atrasada</Badge></td>
+    </tr>
   );
 }
 

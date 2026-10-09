@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { LoginForm } from "./LoginForm";
 import { SignupForm } from "./SignupForm";
 
@@ -49,23 +48,6 @@ export function AuthLayout() {
 
         .auth-form-inner {
           width: 100%;
-        }
-
-        /* LINK ESQUECI A SENHA */
-        .forgot-password {
-          display: block;
-          margin-top: 12px;
-          text-align: center;
-          font-size: 0.9rem;
-          color: hsl(var(--accent-primary));
-          text-decoration: none;
-          cursor: pointer;
-          transition: opacity .2s;
-        }
-
-        .forgot-password:hover {
-          opacity: .75;
-          text-decoration: underline;
         }
 
         .auth-toggle-box {
@@ -235,14 +217,6 @@ export function AuthLayout() {
 
               <LoginForm />
 
-              {/* ESQUECI A SENHA */}
-              <Link
-                to="/forgot-password"
-                className="forgot-password"
-              >
-                Esqueci minha senha
-              </Link>
-
             </div>
           </div>
 
@@ -257,6 +231,11 @@ export function AuthLayout() {
           <div className="auth-toggle-box">
 
             <div className="auth-toggle-panel toggle-left">
+              <img
+                src="/wiadupla-logo.png"
+                alt="Wiadupla - Serviço de Pavimentação"
+                className="w-full max-w-[190px] h-auto mb-6"
+              />
               <h2>Olá!</h2>
 
               <p>
@@ -273,6 +252,11 @@ export function AuthLayout() {
             </div>
 
             <div className="auth-toggle-panel toggle-right">
+              <img
+                src="/wiadupla-logo.png"
+                alt="Wiadupla - Serviço de Pavimentação"
+                className="w-full max-w-[190px] h-auto mb-6"
+              />
               <h2>Bem-vindo de volta!</h2>
 
               <p>
