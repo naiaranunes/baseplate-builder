@@ -213,7 +213,6 @@ export type Database = {
           nome: string
           usuario_id: string | null
           updated_at: string
-          usuario_id: string | null
         }
         Insert: {
           area?: string | null
@@ -226,7 +225,6 @@ export type Database = {
           nome: string
           usuario_id?: string | null
           updated_at?: string
-          usuario_id?: string | null
         }
         Update: {
           area?: string | null
@@ -239,7 +237,6 @@ export type Database = {
           nome?: string
           usuario_id?: string | null
           updated_at?: string
-          usuario_id?: string | null
         }
         Relationships: []
       }

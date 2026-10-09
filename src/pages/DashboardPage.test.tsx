@@ -71,7 +71,7 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("heading", { name: "Entregas atrasadas" })).toBeInTheDocument();
     expect(screen.getByText("Enviar relatório")).toHaveAttribute(
       "href",
-      "/agenda-entregas?entrega=overdue-1",
+      "/entregas?entrega=overdue-1",
     );
     expect(screen.getByText("Ana Colaboradora")).toBeInTheDocument();
     expect(screen.getByText("Atrasada")).toBeInTheDocument();

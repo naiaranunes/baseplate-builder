@@ -192,6 +192,19 @@ export default function EquipePage() {
           {form && (
             <div className="space-y-3">
               <div><Label>Nome completo</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
+              <div>
+                <Label>E-mail para convite *</Label>
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  O convite para entrar na plataforma e concluir o cadastro será enviado para este endereço.
+                </p>
+              </div>
               <div><Label>Cargo/Função</Label><Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} /></div>
               <div>
 

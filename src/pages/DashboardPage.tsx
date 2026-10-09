@@ -38,6 +38,22 @@ const STATUS_RANK: Record<Status, number> = { verde: 0, amarelo: 1, vermelho: 2 
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { data: metas, isLoading } = useMetas();
+  const {
+    data: entregasAgendadas,
+    isLoading: entregasLoading,
+    isError: entregasError,
+    error: erroEntregas,
+  } = useEntregas();
+  const {
+    data: liderados,
+    isError: lideradosError,
+    error: erroLiderados,
+  } = useLiderados();
+  const hoje = hojeISO();
+  const atrasadas = (entregasAgendadas ?? [])
+    .filter((entrega) => !isConcluida(entrega.status) && entrega.prazo < hoje)
+    .sort((a, b) => a.prazo.localeCompare(b.prazo));
+  const nomePorLiderado = new Map((liderados ?? []).map((liderado) => [liderado.id, liderado.nome]));
 
   const today = useMemo(
     () =>
@@ -150,7 +166,7 @@ export default function DashboardPage() {
               Entregas atrasadas
             </h2>
             <Link
-              to="/agenda-entregas"
+              to="/entregas"
               className="text-xs font-medium hover:underline"
               style={{ color: "var(--color-blue)" }}
             >
@@ -359,7 +375,7 @@ function OverdueDeliveryRow({ entrega, nome }: { entrega: Entrega; nome: string 
     <tr className="border-t hover:bg-muted/30">
       <td className="px-4 py-3 font-medium">
         <Link
-          to={`/agenda-entregas?entrega=${encodeURIComponent(entrega.id)}`}
+          to={`/entregas?entrega=${encodeURIComponent(entrega.id)}`}
           className="hover:underline"
         >
           {entrega.titulo}

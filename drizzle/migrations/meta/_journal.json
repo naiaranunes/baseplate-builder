@@ -50,6 +50,27 @@
       "when": 1791542713122,
       "tag": "0006_supervisor_ve_colaboradores",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791558031692,
+      "tag": "0007_role_delivery_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791558032692,
+      "tag": "0008_entregas_realtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791558033692,
+      "tag": "0009_entrega_rpc_schema_cache",
+      "breakpoints": true
     }
   ]
 }

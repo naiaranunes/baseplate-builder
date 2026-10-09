@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import type { EntregaStatus, Periodicidade } from "@/lib/entregas";
+import { proximoPrazo, type EntregaStatus, type Periodicidade } from "@/lib/entregas";
 
 export type Liderado = { id: string; gestor_id: string; usuario_id: string | null; nome: string; cargo: string | null; email: string | null; area: string | null; ativo: boolean };
 
@@ -97,6 +97,8 @@ export function useConvidarColaborador() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      if (data?.status === "convidado") return "sent";
+      if (data?.status === "ja_cadastrado") return "already_registered";
       if (data?.status !== "sent" && data?.status !== "already_registered") {
         throw new Error("Resposta inesperada ao enviar o convite.");
       }
@@ -209,7 +211,7 @@ export function useRegistrarRealizacao() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ entrega, data, observacao }: { entrega: Entrega; data: string; observacao?: string }) => {
-      const { data: proximoPrazo, error } = await supabase.rpc("registrar_realizacao_entrega", {
+      const { error } = await supabase.rpc("registrar_realizacao_entrega", {
         p_entrega_id: entrega.id,
         p_data: data,
         p_observacao: observacao || null,

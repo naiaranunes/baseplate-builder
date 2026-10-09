@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { PackageCheck, Users, UserRound,
+import { PackageCheck, Users,
   LayoutDashboard,
   Target,
   ListChecks,
@@ -22,13 +22,12 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import type { AppRole } from "@/types/auth";
 
 type NavItem = {
   title: string;
   url: string;
   icon: typeof LayoutDashboard;
-  roles?: AppRole[];
+  adminOnly?: boolean;
 };
 
 export function AppSidebar({
@@ -50,14 +49,13 @@ export function AppSidebar({
   ];
 
   const footerItems: NavItem[] = [
-    { title: "Meu perfil", url: "/perfil", icon: UserRound },
     { title: "Ajuda", url: "/ajuda", icon: HelpCircle },
-    { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
+    { title: "Configurações", url: "/configuracoes", icon: Settings, adminOnly: true },
   ];
 
-  const canSee = (item: NavItem) => !item.roles || (!!role && item.roles.includes(role));
-  const visibleFooterItems = footerItems.filter(canSee);
-  const visibleItems = items.filter(canSee);
+  const visibleFooterItems = footerItems.filter((i) => !i.adminOnly || isAdmin);
+
+  const visibleItems = items.filter((i) => !i.adminOnly || isAdmin);
 
   const initials = (profile?.full_name || "?")
     .split(" ")
@@ -67,7 +65,9 @@ export function AppSidebar({
     .join("");
 
   const isActive = (url: string) =>
-    url === "/dashboard" ? pathname === "/" || pathname === url : pathname === url || pathname.startsWith(`${url}/`);
+    url === "/dashboard"
+      ? pathname === "/" || pathname === "/dashboard"
+      : pathname.startsWith(url);
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -85,7 +85,7 @@ export function AppSidebar({
           </div>
         )}
 
-        {onLancarResultado && !collapsed && (role === "admin" || role === "supervisor") && (
+        {onLancarResultado && !collapsed && (
           <div className="px-3 mb-3">
             <Button
               size="sm"
@@ -172,9 +172,9 @@ export function AppSidebar({
               <div className="text-xs font-medium text-[hsl(var(--sidebar-foreground))] truncate">
                 {profile?.full_name || "Usuário"}
               </div>
-              {role && (
+              {isAdmin && (
                 <div className="text-[10px] uppercase tracking-wider text-[hsl(var(--sidebar-foreground))]/55">
-                  {role === "admin" ? "Administrador" : role === "supervisor" ? "Líder" : "Colaborador"}
+                  Admin
                 </div>
               )}
             </div>

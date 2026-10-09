@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  type Entrega, type Liderado, useAddComentario, useConvidarColaborador, useCreateEntrega, useEntregas, useExcluirEntrega, useExcluirLiderado,
+  type Entrega, type Liderado, useAddComentario, useCreateEntrega, useEntregas, useExcluirEntrega, useExcluirLiderado,
   useHistorico, useLiderados, useMembros, useRegistrarRealizacao, useSalvarLiderado, useUpdateStatus,
 } from "@/hooks/useEntregas";
 import {
@@ -46,17 +46,14 @@ function StatusBadge({ e }: { e: Entrega }) {
   );
 }
 
-export default function EntregasPage({ mode }: { mode: "agenda" | "mine" }) {
-  const isMine = mode === "mine";
-  const { isAdmin, isSupervisor } = useAuth();
-  const canManage = isAdmin || isSupervisor;
+export default function EntregasPage() {
   const { data: entregas, isLoading } = useEntregas();
   const { data: liderados } = useLiderados();
   const { user, isAdmin, isSupervisor } = useAuth();
   const [novoOpen, setNovoOpen] = useState(() => new URLSearchParams(window.location.search).has("nova"));
   const [selecionada, setSelecionada] = useState<Entrega | null>(null);
   const [pessoa, setPessoa] = useState("todos");
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const entregaId = searchParams.get("entrega");
@@ -108,41 +105,12 @@ export default function EntregasPage({ mode }: { mode: "agenda" | "mine" }) {
 
           {isLoading ? <Skeleton className="h-48 w-full mt-4" /> : (
             <>
-              <TabsContent value="agenda"><Agenda entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
+              <TabsContent value="agenda"><Agenda entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} canManage={isLider} /></TabsContent>
               <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => !meusIds.has(l.id) && (pessoa === "todos" || l.id === pessoa))} /></TabsContent>
-              <TabsContent value="historico"><HistoricoGeral entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
+              <TabsContent value="historico"><HistoricoGeral entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} canManage={isLider} /></TabsContent>
             </>
           )}
-        </div>
-        {errorLiderados && canManage && (
-          <p role="alert" className="text-sm text-destructive">
-            Não foi possível carregar os colaboradores: {lideradosError.message}
-          </p>
-        )}
-
-        {isMine ? (
-          isLoading
-            ? <Skeleton className="h-48 w-full mt-4" />
-            : <MinhasEntregas entregas={todas} onOpen={setSelecionada} />
-        ) : (
-          <Tabs defaultValue="agenda">
-            <TabsList>
-              <TabsTrigger value="agenda">Agenda</TabsTrigger>
-              <TabsTrigger value="reuniao">Visão para reunião</TabsTrigger>
-              <TabsTrigger value="historico">Histórico</TabsTrigger>
-              <TabsTrigger value="liderados">Colaboradores</TabsTrigger>
-            </TabsList>
-
-            {isLoading ? <Skeleton className="h-48 w-full mt-4" /> : (
-              <>
-                <TabsContent value="agenda"><Agenda entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
-                <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => pessoa === "todos" || l.id === pessoa)} /></TabsContent>
-                <TabsContent value="historico"><HistoricoGeral entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} /></TabsContent>
-                <TabsContent value="liderados"><LideradosTab liderados={(liderados ?? []).filter((l) => l.ativo)} entregas={entregas ?? []} /></TabsContent>
-              </>
-            )}
-          </Tabs>
-        )}
+        </Tabs>
       </div>
 
       <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo && !meusIds.has(l.id))} />
@@ -151,61 +119,7 @@ export default function EntregasPage({ mode }: { mode: "agenda" | "mine" }) {
   );
 }
 
-function MinhasEntregas({ entregas, onOpen }: { entregas: Entrega[]; onOpen: (entrega: Entrega) => void }) {
-  if (entregas.length === 0) {
-    return <div className="metasia-card mt-4 p-8 text-center text-sm text-muted-foreground">Você ainda não tem entregas atribuídas.</div>;
-  }
-
-  return (
-    <div className="metasia-card mt-4 overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="text-left text-muted-foreground border-b">
-          <tr>
-            <th className="p-3">Entrega</th>
-            <th className="p-3">Periodicidade</th>
-            <th className="p-3">Prazo</th>
-            <th className="p-3">Realizada em</th>
-            <th className="p-3">Situação</th>
-            <th className="p-3 text-right">Ação</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entregas.map((entrega) => (
-            <tr
-              key={entrega.id}
-              className="border-b last:border-0 cursor-pointer hover:bg-muted/50"
-              onClick={() => onOpen(entrega)}
-            >
-              <td className="p-3 font-medium">{entrega.titulo}</td>
-              <td className="p-3">{PERIODICIDADE_LABEL[entrega.periodicidade]}</td>
-              <td className="p-3">{fmt(entrega.prazo)}</td>
-              <td className="p-3">{entrega.data_realizacao ? fmt(entrega.data_realizacao) : "—"}</td>
-              <td className="p-3"><StatusBadge e={entrega} /></td>
-              <td className="p-3 text-right">
-                {!isConcluida(entrega.status) && (
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    aria-label={`Entregar ${entrega.titulo}`}
-                    title="Entregar"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onOpen(entrega);
-                    }}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void; vazio: string }) {
+function TabelaEntregas({ itens, nome, onOpen, vazio, canManage }: { itens: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void; vazio: string; canManage: boolean }) {
   const excluir = useExcluirEntrega();
   const apagar = async (e: Entrega) => {
     if (!confirm(`Excluir a entrega "${e.titulo}"?`)) return;
@@ -216,7 +130,7 @@ function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="text-left text-muted-foreground border-b">
-          <tr><th className="p-3">Liderado</th><th className="p-3">Entrega</th><th className="p-3">Periodicidade</th><th className="p-3">Prazo</th><th className="p-3">Realizada em</th><th className="p-3">Situação</th><th /></tr>
+          <tr><th className="p-3">Liderado</th><th className="p-3">Entrega</th><th className="p-3">Periodicidade</th><th className="p-3">Prazo</th><th className="p-3">Realizada em</th><th className="p-3">Situação</th><th className="p-3 text-right">Ação</th></tr>
         </thead>
         <tbody>
           {itens.map((e) => (
@@ -228,7 +142,11 @@ function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome
               <td className="p-3">{e.data_realizacao ? fmt(e.data_realizacao) : "—"}</td>
               <td className="p-3"><StatusBadge e={e} /></td>
               <td className="p-3 text-right">
-                <Button size="icon" variant="ghost" aria-label="Excluir entrega" onClick={(ev) => { ev.stopPropagation(); apagar(e); }}><Trash2 className="h-4 w-4" /></Button>
+                {canManage ? (
+                  <Button size="icon" variant="ghost" aria-label={`Excluir ${e.titulo}`} onClick={(ev) => { ev.stopPropagation(); apagar(e); }}><Trash2 className="h-4 w-4" /></Button>
+                ) : !isConcluida(e.status) ? (
+                  <Button size="icon" variant="ghost" aria-label={`Entregar ${e.titulo}`} title="Entregar" onClick={(ev) => { ev.stopPropagation(); onOpen(e); }}><CheckCircle2 className="h-4 w-4" /></Button>
+                ) : null}
               </td>
             </tr>
           ))}
@@ -238,7 +156,7 @@ function TabelaEntregas({ itens, nome, onOpen, vazio }: { itens: Entrega[]; nome
   );
 }
 
-function Agenda({ entregas, nome, onOpen }: { entregas: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void }) {
+function Agenda({ entregas, nome, onOpen, canManage }: { entregas: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void; canManage: boolean }) {
   const agora = new Date();
   const abertas = entregas.filter((e) => !isConcluida(e.status));
   const de = (s: Situacao) => abertas.filter((e) => situacao(e, agora) === s);
@@ -248,8 +166,13 @@ function Agenda({ entregas, nome, onOpen }: { entregas: Entrega[]; nome: (id: st
     { t: "No prazo", itens: de("no_prazo"), vazio: "Nenhuma outra entrega prevista." },
   ];
   return (
-    <div className="metasia-card mt-4 overflow-x-auto">
-      <TabelaEntregas itens={ordenadas} nome={nome} onOpen={onOpen} vazio="Nenhuma entrega agendada." />
+    <div className="space-y-4 mt-4">
+      {grupos.map((g) => (
+        <div key={g.t} className="metasia-card">
+          <h3 className="font-semibold px-4 pt-4">{g.t} <span className="text-muted-foreground font-normal">({g.itens.length})</span></h3>
+          <TabelaEntregas itens={g.itens} nome={nome} onOpen={onOpen} vazio={g.vazio} canManage={canManage} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -276,7 +199,7 @@ function Reuniao({ entregas, liderados }: { entregas: Entrega[]; liderados: Lide
       <div className="metasia-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-muted-foreground border-b">
-            <tr><th className="p-3">Colaborador</th><th className="p-3">Previstas</th><th className="p-3">Atrasadas</th><th className="p-3">Realizadas</th><th className="p-3">Realizadas no prazo</th><th className="p-3">Pendências</th></tr>
+            <tr><th className="p-3">Liderado</th><th className="p-3">Previstas</th><th className="p-3">Atrasadas</th><th className="p-3">Realizadas</th><th className="p-3">Realizadas no prazo</th><th className="p-3">Pendências</th></tr>
           </thead>
           <tbody>
             {linhas.map((r) => (
@@ -297,9 +220,9 @@ function Reuniao({ entregas, liderados }: { entregas: Entrega[]; liderados: Lide
   );
 }
 
-function HistoricoGeral({ entregas, nome, onOpen }: { entregas: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void }) {
+function HistoricoGeral({ entregas, nome, onOpen, canManage }: { entregas: Entrega[]; nome: (id: string | null) => string; onOpen: (e: Entrega) => void; canManage: boolean }) {
   const feitas = entregas.filter((e) => isConcluida(e.status)).sort((a, b) => (b.data_realizacao ?? "").localeCompare(a.data_realizacao ?? ""));
-  return <div className="metasia-card mt-4"><TabelaEntregas itens={feitas} nome={nome} onOpen={onOpen} vazio="Nenhuma entrega realizada ainda." /></div>;
+  return <div className="metasia-card mt-4"><TabelaEntregas itens={feitas} nome={nome} onOpen={onOpen} vazio="Nenhuma entrega realizada ainda." canManage={canManage} /></div>;
 }
 
 function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; onOpenChange: (o: boolean) => void; liderados: Liderado[] }) {
@@ -343,11 +266,7 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
           <div><Label>Liderado *</Label>
             <Select value={liderado} onValueChange={escolherLiderado}>
               <SelectTrigger><SelectValue placeholder="Quem deve entregar" /></SelectTrigger>
-              <SelectContent>
-                {liderados.length
-                  ? liderados.map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)
-                  : <SelectItem value="__empty__" disabled>Nenhum colaborador ativo cadastrado.</SelectItem>}
-              </SelectContent>
+              <SelectContent>{liderados.map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           {liderado && <div><Label>E-mail do colaborador (convite de acesso)</Label>
@@ -374,20 +293,9 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
   );
 }
 
-function DetalheEntrega({
-  entrega,
-  onClose,
-  nome,
-  canManage,
-  isMine,
-}: {
-  entrega: Entrega | null;
-  onClose: () => void;
-  nome: (id: string | null) => string;
-  canManage: boolean;
-  isMine: boolean;
-}) {
-  const { user } = useAuth();
+function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; onClose: () => void; nome: (id: string | null) => string }) {
+  const { user, isAdmin, isSupervisor } = useAuth();
+  const canManage = isAdmin || isSupervisor;
   const { data: membros } = useMembros();
   const { data: historico } = useHistorico(entrega?.id);
   const update = useUpdateStatus();
@@ -442,19 +350,17 @@ function DetalheEntrega({
                   <h3 className="font-semibold">Registrar realização</h3>
                   <div><Label>Data da entrega</Label><Input type="date" value={dataReal} onChange={(e) => setDataReal(e.target.value)} /></div>
                   <div><Label>Observação</Label><Textarea value={obs} onChange={(e) => setObs(e.target.value)} /></div>
-                  <Button onClick={onRegistrar} disabled={registrar.isPending}><CheckCircle2 className="h-4 w-4 mr-1.5" />Marcar como finalizado</Button>
+                  <Button onClick={onRegistrar} disabled={registrar.isPending}><CheckCircle2 className="h-4 w-4 mr-1.5" />Marcar como entregue</Button>
                 </div>
               )}
 
-              {canManage && (
-                <div>
-                  <Label>Alterar situação</Label>
-                  <Select value={entrega.status} onValueChange={(v) => mudarStatus(v as EntregaStatus)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{STATUS_OPCOES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <Label>Alterar situação</Label>
+                <Select value={entrega.status} onValueChange={(v) => mudarStatus(v as EntregaStatus)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{STATUS_OPCOES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
 
               <div className="space-y-2">
                 <Label>Comentário / cobrança</Label>
@@ -475,7 +381,7 @@ function DetalheEntrega({
                 </ul>
               </div>
 
-              {canManage && !isMine && (
+              {canManage && (
                 <Button variant="ghost" className="text-destructive" onClick={async () => { if (confirm("Excluir esta entrega?")) { await excluir.mutateAsync(entrega.id); fechar(); } }}>
                   <Trash2 className="h-4 w-4 mr-1.5" />Excluir entrega
                 </Button>
