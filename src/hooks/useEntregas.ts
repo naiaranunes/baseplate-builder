@@ -138,8 +138,10 @@ export function useEntregas() {
   useEffect(() => {
     if (!user?.id) return;
 
+    // Nome único por instância: vários componentes usam este hook ao mesmo tempo,
+    // e reutilizar o mesmo nome devolve um canal já inscrito (erro do realtime).
     const channel = supabase
-      .channel(`entregas:${user.id}`)
+      .channel(`entregas:${user.id}:${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "entregas" },
