@@ -49,13 +49,31 @@ export default function ResetPassword() {
         return;
       }
 
-      const { data, error: sessionError } = await supabase.auth.getSession();
+      const hash = window.location.hash;
+      const linkFromEmail =
+        recoveryType === "recovery" || hash.includes("access_token") || !!searchParams.get("code");
+      if (linkFromEmail || isPasswordRecovery) {
+        sessionStorage.setItem("pw_recovery", "1");
+      }
+      const recoveryFlag = sessionStorage.getItem("pw_recovery") === "1";
+
+      // A sessão do link pode demorar alguns instantes para ser criada.
+      let session = null;
+      let sessionError = null;
+      for (let i = 0; i < 10 && mounted; i++) {
+        const res = await supabase.auth.getSession();
+        session = res.data.session;
+        sessionError = res.error;
+        if (session || sessionError) break;
+        await new Promise((r) => setTimeout(r, 300));
+      }
       if (!mounted) return;
 
-      if (sessionError) {
-        setError("Não foi possível validar o link de redefinição. Solicite um novo link.");
-      } else if (isPasswordRecovery && data.session) {
+      if (session && (recoveryFlag || isPasswordRecovery || linkFromEmail)) {
+        setError("");
         setHasRecoverySession(true);
+      } else if (sessionError) {
+        setError("Não foi possível validar o link de redefinição. Solicite um novo link.");
       } else {
         setError("O link de redefinição é inválido ou expirou. Solicite um novo link.");
       }
