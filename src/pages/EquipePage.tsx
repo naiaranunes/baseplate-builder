@@ -18,11 +18,11 @@ import { useConvidarColaborador, useExcluirLiderado, useLideres, useLiderados, u
 
 const AREAS_SUGERIDAS = ["Diretoria Comercial e Operações", "Obras", "Comercial/Vendas", "Administrativo", "Marketing", "Produção"];
 
-type Form = { id?: string; nome: string; email: string; cargo: string; area: string; gestor_id: string; ativo: boolean };
+type Form = { id?: string; convitePendente?: boolean; nome: string; email: string; cargo: string; area: string; gestor_id: string; ativo: boolean };
 
 export default function EquipePage() {
   const { user, isAdmin } = useAuth();
-  const { data: liderados, isLoading } = useLiderados();
+  const { data: liderados, isLoading } = useLiderados(isAdmin ? undefined : user?.id);
   const { data: lideres } = useLideres();
   const salvar = useSalvarLiderado();
   const convidar = useConvidarColaborador();
@@ -61,21 +61,24 @@ export default function EquipePage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Informe um e-mail válido para o colaborador.");
     if (!form.gestor_id) return toast.error("Selecione o líder responsável.");
     const novoColaborador = !form.id;
+    const precisaConvidar = novoColaborador || form.convitePendente;
     try {
       const lideradoId = await salvar.mutateAsync({ id: form.id, nome: form.nome.trim(), email, cargo: form.cargo || null, area: form.area || null, gestor_id: form.gestor_id, ativo: form.ativo });
-      setForm(null);
-      if (!novoColaborador) {
+      if (!precisaConvidar) {
+        setForm(null);
         toast.success("Colaborador atualizado.");
         return;
       }
       try {
         const status = await convidar.mutateAsync(lideradoId);
+        setForm(null);
         if (status === "sent") {
           toast.success(`Colaborador cadastrado. Convite enviado para ${email}.`);
         } else {
           toast.info("Colaborador cadastrado. Este e-mail já possui uma conta e pode entrar com o login existente.");
         }
       } catch (error) {
+        setForm({ ...form, id: lideradoId, convitePendente: true });
         toast.error(`Colaborador cadastrado, mas o convite não foi enviado: ${(error as Error).message}`);
       }
     } catch (error) { toast.error((error as Error).message); }
@@ -188,7 +191,7 @@ export default function EquipePage() {
 
       <Dialog open={!!form} onOpenChange={(o) => !o && setForm(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{form?.id ? "Editar colaborador" : "Novo colaborador"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{form?.convitePendente ? "Enviar convite pendente" : form?.id ? "Editar colaborador" : "Novo colaborador"}</DialogTitle></DialogHeader>
           {form && (
             <div className="space-y-3">
               <div><Label>Nome completo</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
@@ -234,7 +237,9 @@ export default function EquipePage() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setForm(null)}>Cancelar</Button>
-            <Button onClick={enviar} disabled={salvar.isPending || convidar.isPending}>Salvar</Button>
+            <Button onClick={enviar} disabled={salvar.isPending || convidar.isPending}>
+              {form.convitePendente ? "Reenviar convite" : form.id ? "Salvar alterações" : "Cadastrar e enviar convite"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

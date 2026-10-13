@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { proximoPrazo, type EntregaStatus, type Periodicidade } from "@/lib/entregas";
+import { appUrl } from "@/lib/appUrl";
 
 export type Liderado = { id: string; gestor_id: string; usuario_id: string | null; nome: string; cargo: string | null; email: string | null; area: string | null; ativo: boolean };
 
@@ -43,12 +44,14 @@ export function useMembros() {
   });
 }
 
-export function useLiderados() {
+export function useLiderados(gestorId?: string) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["liderados", user?.id],
+    queryKey: ["liderados", user?.id, gestorId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("liderados").select("*").order("nome");
+      let query = supabase.from("liderados").select("*");
+      if (gestorId) query = query.eq("gestor_id", gestorId);
+      const { data, error } = await query.order("nome");
       if (error) throw error;
       return (data ?? []) as Liderado[];
     },
@@ -93,7 +96,7 @@ export function useConvidarColaborador() {
   return useMutation({
     mutationFn: async (lideradoId: string): Promise<"sent" | "already_registered"> => {
       const { data, error } = await supabase.functions.invoke("convidar-colaborador", {
-        body: { liderado_id: lideradoId },
+        body: { liderado_id: lideradoId, redirect_to: appUrl("/accept-invite") },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

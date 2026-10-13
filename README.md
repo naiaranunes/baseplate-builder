@@ -48,5 +48,41 @@ em [`supabase/migrations`](supabase/migrations) que toca em `handle_new_user`.
 2. Acesse `/settings` (aba Segurança) para configurar aprovação e domínios
 3. Acesse `/settings` (aba Chaves de API) para configurar integrações
 
+## Recuperação de senha
+
+O link de recuperação aponta por padrão para
+`https://baseplate-builder.lovable.app/reset-password`, evitando usar o domínio
+do editor/preview do Lovable. Para outro domínio publicado, configure
+`VITE_APP_URL` com a origem pública desejada. Em **Supabase → Authentication →
+URL Configuration**, defina a origem publicada como **Site URL** e permita
+`https://baseplate-builder.lovable.app/reset-password` em **Redirect URLs**
+(adicione também as origens locais usadas no desenvolvimento, se necessário).
+
+O template de e-mail de redefinição deve usar `{{ .ConfirmationURL }}` no link
+de confirmação. Assim, depois de validar o token, o Supabase redireciona para o
+formulário da aplicação, onde a pessoa informa e confirma a nova senha.
+
+## Convites de colaboradores
+
+Ao cadastrar um colaborador em **Equipe → Novo colaborador**, informe o e-mail
+que ele usará para entrar. O convite de autenticação é enviado para esse
+endereço e redireciona para `/accept-invite`, onde o colaborador define e
+confirma a senha. Em **Supabase → Authentication → URL Configuration**, permita
+`https://baseplate-builder.lovable.app/accept-invite` em **Redirect URLs** (ou
+o caminho correspondente do domínio configurado em `VITE_APP_URL`). Se usar
+outro domínio, configure também o segredo `APP_URL` das Edge Functions com a
+mesma origem. O template de convite do Supabase deve usar
+`{{ .ConfirmationURL }}`.
+
+Para testar o fluxo ponta a ponta com contas reais:
+
+1. Como líder, cadastre um colaborador com um endereço de e-mail que possa acessar.
+2. Abra o convite recebido, defina e confirme a senha na tela **Ativar acesso**.
+3. Como líder, crie uma entrega atribuída a esse colaborador.
+4. Entre com a conta do colaborador e registre a conclusão da entrega.
+
+Após confirmar o e-mail, a conta é associada ao cadastro do colaborador; ele
+pode então acessar e registrar as entregas atribuídas.
+
 ## Stack
 Lovable · React 18 · Supabase · TypeScript · Tailwind · shadcn/ui · TanStack Query

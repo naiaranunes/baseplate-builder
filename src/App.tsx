@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthPage from "./pages/AuthPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AcceptInvitePage from "./pages/AcceptInvitePage";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import DashboardPage from "./pages/DashboardPage";
 import AnaliseMetaPage from "./pages/AnaliseMetaPage";
@@ -81,6 +82,9 @@ const App = () => (
 
             <Route path="/reset-password" element={<ResetPassword />} />
 
+            {/* Aceite de convite de colaborador */}
+            <Route path="/accept-invite" element={<AcceptInvitePage />} />
+
             {/* Aprovação de usuário */}
             <Route path="/pending-approval" element={
                 <ProtectedRoute allowUnapproved>
@@ -113,7 +117,7 @@ const App = () => (
             <Route
               path="/equipe"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
                   <EquipePage />
                 </ProtectedRoute>
               }
