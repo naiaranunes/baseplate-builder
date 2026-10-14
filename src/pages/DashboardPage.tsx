@@ -24,7 +24,8 @@ function greeting(): string {
 }
 
 export default function DashboardPage() {
-  const { profile, user, isAdmin } = useAuth();
+  const { profile, user, isAdmin, isSupervisor } = useAuth();
+  const isLeader = isAdmin || isSupervisor;
   const {
     data: entregasAgendadas,
     isLoading: entregasLoading,
@@ -115,6 +116,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
+      {({ openLancarEntrega }) => (
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -124,12 +126,18 @@ export default function DashboardPage() {
             <p className="text-sm text-muted-foreground capitalize">{today}</p>
           </div>
           <Button
-            onClick={() => (window.location.href = "/entregas?nova=1")}
+            onClick={() => {
+              if (isLeader) {
+                window.location.href = "/entregas?nova=1";
+              } else {
+                openLancarEntrega();
+              }
+            }}
             style={{ backgroundColor: "var(--color-blue)", color: "white" }}
             className="hover:opacity-90"
           >
             <Plus className="h-4 w-4 mr-1.5" />
-            Nova Entrega
+            {isLeader ? "Nova Entrega" : "Lançar entrega"}
           </Button>
         </div>
 
@@ -341,7 +349,7 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
-
+      )}
     </AppShell>
   );
 }

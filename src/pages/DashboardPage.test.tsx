@@ -1,16 +1,22 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DashboardPage from "./DashboardPage";
 
 const mocks = vi.hoisted(() => ({
   auth: { userId: "admin-user", isAdmin: true },
+  isSupervisor: false,
+  openLaunch: vi.fn(),
   entregas: [] as Array<Record<string, unknown>>,
   liderados: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("@/components/AppShell", () => ({
-  AppShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  AppShell: ({ children }: {
+    children: React.ReactNode | ((actions: { openLancarEntrega: () => void }) => React.ReactNode);
+  }) => <div>{typeof children === "function"
+    ? children({ openLancarEntrega: mocks.openLaunch })
+    : children}</div>,
 }));
 
 vi.mock("@/hooks/useAuth", () => ({
@@ -18,6 +24,7 @@ vi.mock("@/hooks/useAuth", () => ({
     profile: { full_name: "Ana" },
     user: { id: mocks.auth.userId },
     isAdmin: mocks.auth.isAdmin,
+    isSupervisor: mocks.isSupervisor,
   }),
 }));
 
@@ -47,6 +54,8 @@ vi.mock("@/components/metas/NovaMetaModal", () => ({
 describe("DashboardPage", () => {
   beforeEach(() => {
     mocks.auth = { userId: "admin-user", isAdmin: true };
+    mocks.isSupervisor = false;
+    mocks.openLaunch.mockReset();
     const prazoProximo = new Date();
     prazoProximo.setDate(prazoProximo.getDate() + 1);
     const prazoFuturo = new Date();
@@ -176,6 +185,19 @@ describe("DashboardPage", () => {
     expect(screen.queryByText("Atualizar orçamento")).not.toBeInTheDocument();
     expect(screen.getByText("Enviar relatório")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Comercial" })).not.toBeInTheDocument();
+  });
+
+  it("shows the launch action for collaborators and opens the delivery launch dialog", () => {
+    mocks.auth = { userId: "agent-user", isAdmin: false };
+
+    render(
+      <BrowserRouter>
+        <DashboardPage />
+      </BrowserRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Lançar entrega" }));
+    expect(mocks.openLaunch).toHaveBeenCalledOnce();
   });
 
   it("shows only active deliveries due within 48 hours in the risk list", () => {

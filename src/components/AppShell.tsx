@@ -34,7 +34,15 @@ function buildBreadcrumb(pathname: string): { label: string; href: string }[] {
   return crumbs;
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+type AppShellActions = {
+  openLancarEntrega: () => void;
+};
+
+type AppShellProps = {
+  children: ReactNode | ((actions: AppShellActions) => ReactNode);
+};
+
+export function AppShell({ children }: AppShellProps) {
   const { pathname } = useLocation();
   const [lancarOpen, setLancarOpen] = useState(false);
   const [notifsOpen, setNotifsOpen] = useState(false);
@@ -80,7 +88,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+          <main className="flex-1 p-6 overflow-y-auto">
+            {typeof children === "function"
+              ? children({ openLancarEntrega: () => setLancarOpen(true) })
+              : children}
+          </main>
         </div>
       </div>
 
