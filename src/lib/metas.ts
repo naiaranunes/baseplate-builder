@@ -61,13 +61,6 @@ export function progressoEsperado(dataInicio: string, dataFim: string): number {
   return (hoje - inicio) / (fim - inicio);
 }
 
-/** Desvio em pontos percentuais entre progresso real e esperado. */
-export function desvioPercentual(meta: Pick<Meta, "valor_atual" | "valor_alvo" | "data_inicio" | "data_fim" | "is_inverse">): number {
-  const real = progressoReal(meta.valor_atual, meta.valor_alvo, meta.is_inverse);
-  const esperado = progressoEsperado(meta.data_inicio, meta.data_fim);
-  return Math.round((real - esperado) * 100);
-}
-
 export function formatValor(valor: number, unidade: string): string {
   const u = unidade.trim();
   if (u === "R$" || u.toLowerCase() === "brl") {

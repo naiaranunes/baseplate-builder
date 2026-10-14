@@ -39,7 +39,6 @@ import {
 import { useAnaliseMeta } from "@/hooks/useAnaliseMeta";
 
 import {
-  desvioPercentual,
   formatDateISOToBR,
   formatValor,
   progressoEsperado,
@@ -108,8 +107,6 @@ export default function AnaliseMetaPage() {
     meta.data_fim,
   );
 
-  const desvio = desvioPercentual(meta);
-
   return (
     <AppShell>
       <div className="space-y-5">
@@ -157,19 +154,7 @@ export default function AnaliseMetaPage() {
             </div>
 
             <div className="text-xs text-muted-foreground">
-              de {formatValor(meta.valor_alvo, meta.unidade)} ·{" "}
-              <span
-                style={{
-                  color:
-                    desvio < -20
-                      ? "var(--color-red)"
-                      : desvio < -5
-                        ? "var(--color-amber)"
-                        : "var(--color-green)",
-                }}
-              >
-                {desvio}pp
-              </span>
+              de {formatValor(meta.valor_alvo, meta.unidade)}
             </div>
           </div>
         </div>
@@ -207,10 +192,6 @@ export default function AnaliseMetaPage() {
                         Valor
                       </TableHead>
 
-                      <TableHead className="w-[100px]">
-                        Desvio
-                      </TableHead>
-
                       <TableHead>
                         Observação
                       </TableHead>
@@ -219,23 +200,6 @@ export default function AnaliseMetaPage() {
 
                   <TableBody>
                     {[...lancamentos].reverse().map((l) => {
-                      const esp =
-                        ((new Date(l.data_lancamento).getTime() -
-                          new Date(meta.data_inicio).getTime()) /
-                          Math.max(
-                            1,
-                            new Date(meta.data_fim).getTime() -
-                              new Date(meta.data_inicio).getTime(),
-                          )) * meta.valor_alvo;
-
-                      const d = meta.valor_alvo
-                        ? Math.round(
-                            ((l.valor - esp) / meta.valor_alvo) * 100,
-                          )
-                        : 0;
-
-                      const dPos = meta.is_inverse ? -d : d;
-
                       return (
                         <TableRow key={l.id}>
                           <TableCell className="font-mono text-xs">
@@ -244,21 +208,6 @@ export default function AnaliseMetaPage() {
 
                           <TableCell className="font-medium">
                             {formatValor(l.valor, meta.unidade)}
-                          </TableCell>
-
-                          <TableCell>
-                            <span
-                              className="text-xs font-medium"
-                              style={{
-                                color:
-                                  dPos < 0
-                                    ? "var(--color-red)"
-                                    : "var(--color-green)",
-                              }}
-                            >
-                              {dPos > 0 ? "+" : ""}
-                              {dPos}pp
-                            </span>
                           </TableCell>
 
                           <TableCell className="text-xs text-muted-foreground">
@@ -513,20 +462,6 @@ export default function AnaliseMetaPage() {
                       </span>
                     </div>
 
-                    <div>
-                      Desvio:{" "}
-                      <span
-                        className="font-semibold"
-                        style={{
-                          color:
-                            desvio < 0
-                              ? "var(--color-red)"
-                              : "var(--color-green)",
-                        }}
-                      >
-                        {desvio}pp
-                      </span>
-                    </div>
                   </div>
 
                   <Button

@@ -25,7 +25,11 @@ export default function TeamSettings() {
   const excluirUsuario = useExcluirUsuario();
   const { user } = useAuth();
   const excluir = async (id: string, nome: string) => {
-    if (!confirm(`Excluir definitivamente ${nome}? A pessoa perde o acesso ao sistema.`)) return;
+    if (!confirm(
+      `Excluir definitivamente ${nome}? A conta, o perfil e o cadastro de equipe serão removidos. ` +
+      "As entregas e o histórico serão preservados sem vínculo com essa pessoa, e a equipe dela será transferida para você. " +
+      "Ela poderá se cadastrar novamente usando o mesmo e-mail.",
+    )) return;
     try { await excluirUsuario.mutateAsync(id); toast.success("Usuário excluído"); }
     catch (e) { toast.error((e as Error).message); }
   };

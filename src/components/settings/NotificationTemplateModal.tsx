@@ -90,8 +90,7 @@ export function NotificationTemplateModal({ open, onOpenChange, template }: Prop
         <DialogHeader>
           <DialogTitle>{template ? "Editar modelo" : "Novo modelo de notificação"}</DialogTitle>
           <DialogDescription>
-            Use variáveis entre chaves como <code>{"{meta_nome}"}</code>, <code>{"{responsavel}"}</code>,
-            <code>{" {desvio}"}</code> — serão substituídas no envio.
+            Use variáveis entre chaves como <code>{"{meta_nome}"}</code> e <code>{"{responsavel}"}</code> — serão substituídas no envio.
           </DialogDescription>
         </DialogHeader>
 
@@ -149,7 +148,7 @@ export function NotificationTemplateModal({ open, onOpenChange, template }: Prop
               rows={4}
               value={mensagem}
               onChange={(e) => setMensagem(e.target.value)}
-              placeholder=":rotating_light: Entrega {meta_nome} entrou em risco. Desvio: {desvio}%."
+              placeholder=":rotating_light: Entrega {meta_nome} entrou em risco."
             />
           </div>
         </div>

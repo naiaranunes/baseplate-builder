@@ -15,10 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TeamSettings from "@/components/settings/TeamSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { useConvidarColaborador, useExcluirLiderado, useLideres, useLiderados, useSalvarLiderado, type Liderado } from "@/hooks/useEntregas";
+import { SETORES } from "@/lib/areas";
 
-const AREAS_SUGERIDAS = ["Diretoria Comercial e Operações", "Obras", "Comercial/Vendas", "Administrativo", "Marketing", "Produção"];
-
-type Form = { id?: string; convitePendente?: boolean; nome: string; email: string; cargo: string; area: string; gestor_id: string; ativo: boolean };
+type Form = { id?: string; convitePendente?: boolean; perfilAcessoAlterado?: boolean; nome: string; email: string; cargo: string; area: string; gestor_id: string; ativo: boolean; perfil_acesso: "agent" | "supervisor" };
 
 export default function EquipePage() {
   const { user, isAdmin } = useAuth();
@@ -40,9 +39,10 @@ export default function EquipePage() {
     return (id: string) => m.get(id) ?? (id === user?.id ? "Você" : "—");
   }, [lideres, user]);
 
-  // Líder comum só pode atribuir a si mesmo; admin escolhe qualquer líder.
-  const opcoesLider = isAdmin ? lideres ?? [] : (lideres ?? []).filter((l) => l.id === user?.id);
-  const areas = Array.from(new Set([...AREAS_SUGERIDAS, ...(liderados ?? []).map((l) => l.area).filter(Boolean) as string[]]));
+  const areas = Array.from(new Set([...SETORES, ...(liderados ?? []).map((l) => l.area).filter(Boolean) as string[]]));
+  const setoresFormulario = form?.area && !SETORES.some((setor) => setor === form.area)
+    ? [...SETORES, form.area]
+    : SETORES;
 
   const lista = (liderados ?? []).filter((l) =>
     l.nome.toLowerCase().includes(busca.toLowerCase()) &&
@@ -51,19 +51,28 @@ export default function EquipePage() {
     (fStatus === "todos" || (fStatus === "ativo" ? l.ativo : !l.ativo)),
   );
 
-  const abrirNovo = () => setForm({ nome: "", email: "", cargo: "", area: "", gestor_id: user?.id ?? "", ativo: true });
-  const abrirEdicao = (l: Liderado) => setForm({ id: l.id, nome: l.nome, email: l.email ?? "", cargo: l.cargo ?? "", area: l.area ?? "", gestor_id: l.gestor_id, ativo: l.ativo });
+  const abrirNovo = () => setForm({ nome: "", email: "", cargo: "", area: "", gestor_id: user?.id ?? "", ativo: true, perfil_acesso: "agent" });
+  const abrirEdicao = (l: Liderado) => setForm({ id: l.id, nome: l.nome, email: l.email ?? "", cargo: l.cargo ?? "", area: l.area ?? "", gestor_id: l.gestor_id, ativo: l.ativo, perfil_acesso: l.perfil_acesso === "supervisor" ? "supervisor" : "agent" });
 
   const enviar = async () => {
     if (!form) return;
     if (!form.nome.trim()) return toast.error("Informe o nome completo.");
     const email = form.email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Informe um e-mail válido para o colaborador.");
-    if (!form.gestor_id) return toast.error("Selecione o líder responsável.");
+    if (!form.gestor_id) return toast.error("Não foi possível identificar o responsável pela equipe.");
     const novoColaborador = !form.id;
-    const precisaConvidar = novoColaborador || form.convitePendente;
+    const precisaConvidar = novoColaborador || form.convitePendente || form.perfilAcessoAlterado;
     try {
-      const lideradoId = await salvar.mutateAsync({ id: form.id, nome: form.nome.trim(), email, cargo: form.cargo || null, area: form.area || null, gestor_id: form.gestor_id, ativo: form.ativo });
+      const lideradoId = await salvar.mutateAsync({
+        id: form.id,
+        nome: form.nome.trim(),
+        email,
+        cargo: form.cargo || null,
+        area: form.area || null,
+        gestor_id: form.gestor_id,
+        ativo: form.ativo,
+        perfil_acesso: form.perfil_acesso,
+      });
       if (!precisaConvidar) {
         setForm(null);
         toast.success("Colaborador atualizado.");
@@ -74,6 +83,8 @@ export default function EquipePage() {
         setForm(null);
         if (status === "sent") {
           toast.success(`Colaborador cadastrado. Convite enviado para ${email}.`);
+        } else if (!novoColaborador) {
+          toast.success("Perfil de acesso atualizado para a conta existente.");
         } else {
           toast.info("Colaborador cadastrado. Este e-mail já possui uma conta e pode entrar com o login existente.");
         }
@@ -82,6 +93,20 @@ export default function EquipePage() {
         toast.error(`Colaborador cadastrado, mas o convite não foi enviado: ${(error as Error).message}`);
       }
     } catch (error) { toast.error((error as Error).message); }
+  };
+
+  const reenviarConvite = async () => {
+    if (!form?.id) return;
+    try {
+      const status = await convidar.mutateAsync(form.id);
+      if (status === "sent") {
+        toast.success(`Novo convite enviado para ${form.email}.`);
+      } else {
+        toast.info("Esta conta já foi ativada. A pessoa pode entrar com o e-mail e a senha cadastrados.");
+      }
+    } catch (error) {
+      toast.error(`Não foi possível reenviar o convite: ${(error as Error).message}`);
+    }
   };
 
   const alternarStatus = async (l: Liderado) => {
@@ -211,20 +236,28 @@ export default function EquipePage() {
               <div><Label>Cargo/Função</Label><Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} /></div>
               <div>
 
-                <Label>Área/Departamento</Label>
-                <Input list="areas-sugeridas" value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} placeholder="Ex.: Comercial/Vendas" />
-                <datalist id="areas-sugeridas">{areas.map((a) => <option key={a} value={a} />)}</datalist>
-              </div>
-              <div>
-                <Label>Líder responsável</Label>
-                <Select value={form.gestor_id} onValueChange={(v) => setForm({ ...form, gestor_id: v })} disabled={!isAdmin}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <Label>Setor</Label>
+                <Select value={form.area} onValueChange={(area) => setForm({ ...form, area })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
                   <SelectContent>
-                    {opcoesLider.length === 0 && user && <SelectItem value={user.id}>Você</SelectItem>}
-                    {opcoesLider.map((l) => <SelectItem key={l.id} value={l.id}>{l.full_name}</SelectItem>)}
+                    {setoresFormulario.map((setor) => <SelectItem key={setor} value={setor}>{setor}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                {!isAdmin && <p className="text-xs text-muted-foreground mt-1">Somente administradores podem transferir para outro líder.</p>}
+              </div>
+              <div>
+                <Label>Tipo de usuário</Label>
+                <Select
+                  value={isAdmin ? form.perfil_acesso : "agent"}
+                  onValueChange={(perfil_acesso: "agent" | "supervisor") => setForm({ ...form, perfil_acesso, perfilAcessoAlterado: true })}
+                  disabled={!isAdmin}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agent">Colaborador</SelectItem>
+                    {isAdmin && <SelectItem value="supervisor">Líder</SelectItem>}
+                  </SelectContent>
+                </Select>
+                {!isAdmin && <p className="text-xs text-muted-foreground mt-1">Líderes podem cadastrar apenas colaboradores.</p>}
               </div>
               <div>
                 <Label>Status</Label>
@@ -237,8 +270,13 @@ export default function EquipePage() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setForm(null)}>Cancelar</Button>
+            {form?.id && form.email && (
+              <Button variant="outline" onClick={reenviarConvite} disabled={convidar.isPending || salvar.isPending}>
+                Reenviar convite
+              </Button>
+            )}
             <Button onClick={enviar} disabled={salvar.isPending || convidar.isPending}>
-              {form.convitePendente ? "Reenviar convite" : form.id ? "Salvar alterações" : "Cadastrar e enviar convite"}
+              {form?.convitePendente ? "Reenviar convite" : form?.id ? "Salvar alterações" : "Cadastrar e enviar convite"}
             </Button>
           </DialogFooter>
         </DialogContent>

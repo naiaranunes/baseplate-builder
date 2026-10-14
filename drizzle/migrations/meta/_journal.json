@@ -71,6 +71,41 @@
       "when": 1791558033692,
       "tag": "0009_entrega_rpc_schema_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792000000000,
+      "tag": "0010_entregas_setor",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792000001000,
+      "tag": "0011_liderados_perfil_acesso",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792000002000,
+      "tag": "0012_entregas_por_responsavel",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792000003000,
+      "tag": "0013_metas_realtime",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792000004000,
+      "tag": "0014_entregas_perfil_proprio",
+      "breakpoints": true
     }
   ]
 }

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useEntregas, useLiderados, useRegistrarRealizacao } from "@/hooks/useEntregas";
-import { fmtPrazo, hojeISO, isConcluida } from "@/lib/entregas";
+import { entregasAtribuidas, fmtPrazo, hojeISO, isConcluida } from "@/lib/entregas";
 
 export function LancarEntregaModal({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const { data: entregas } = useEntregas();
@@ -20,12 +20,10 @@ export function LancarEntregaModal({ open, onOpenChange }: { open: boolean; onOp
   const [obs, setObs] = useState("");
 
   const isLider = isAdmin || isSupervisor;
-  const mail = (user?.email ?? "").toLowerCase();
-  const meus = new Set((liderados ?? []).filter((l) => (l.email ?? "").toLowerCase() === mail).map((l) => l.id));
+  const meus = new Set((liderados ?? []).filter((l) => l.usuario_id === user?.id).map((l) => l.id));
   const nome = new Map((liderados ?? []).map((l) => [l.id, l.nome]));
-  const abertas = (entregas ?? [])
+  const abertas = entregasAtribuidas(entregas ?? [], meus, isAdmin)
     .filter((e) => !isConcluida(e.status))
-    .filter((e) => isLider || (e.liderado_cadastro_id && meus.has(e.liderado_cadastro_id)))
     .sort((a, b) => a.prazo.localeCompare(b.prazo));
 
   const salvar = async () => {

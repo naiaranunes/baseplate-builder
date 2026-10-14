@@ -25,6 +25,16 @@ export const HORAS_PROXIMO = 48;
 
 export const STATUS_OPCOES: EntregaStatus[] = ["pendente", "em_andamento", "entregue", "aprovada", "devolvida"];
 
+export function entregasAtribuidas<T extends { liderado_cadastro_id: string | null }>(
+  entregas: T[],
+  lideradoIds: ReadonlySet<string>,
+  isAdmin: boolean,
+): T[] {
+  return isAdmin
+    ? entregas
+    : entregas.filter((entrega) => entrega.liderado_cadastro_id !== null && lideradoIds.has(entrega.liderado_cadastro_id));
+}
+
 export const PERIODICIDADE_LABEL: Record<Periodicidade, string> = {
   unica: "Única",
   diaria: "Diária",

@@ -141,6 +141,7 @@ export type Database = {
       }
       entregas: {
         Row: {
+          area: string | null
           created_at: string
           criado_por: string | null
           data_realizacao: string | null
@@ -158,6 +159,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area?: string | null
           created_at?: string
           criado_por?: string | null
           data_realizacao?: string | null
@@ -175,6 +177,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area?: string | null
           created_at?: string
           criado_por?: string | null
           data_realizacao?: string | null
@@ -211,6 +214,7 @@ export type Database = {
           gestor_id: string
           id: string
           nome: string
+          perfil_acesso: Database["public"]["Enums"]["app_role"]
           updated_at: string
           usuario_id: string | null
         }
@@ -223,6 +227,7 @@ export type Database = {
           gestor_id?: string
           id?: string
           nome: string
+          perfil_acesso?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           usuario_id?: string | null
         }
@@ -235,6 +240,7 @@ export type Database = {
           gestor_id?: string
           id?: string
           nome?: string
+          perfil_acesso?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           usuario_id?: string | null
         }

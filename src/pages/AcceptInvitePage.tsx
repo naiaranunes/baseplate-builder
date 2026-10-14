@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,10 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 export default function AcceptInvitePage() {
   const { user, isLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const inviteError = new URLSearchParams(location.search).get("error_code");
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -52,6 +54,15 @@ export default function AcceptInvitePage() {
           <p role="status" className="text-center text-muted-foreground">
             Validando seu convite...
           </p>
+        ) : inviteError ? (
+          <>
+            <p role="alert" className="text-center text-muted-foreground mb-6">
+              O link do convite expirou ou já foi usado. Peça ao administrador para reenviar o convite e abra o link mais recente.
+            </p>
+            <Link to="/auth" className="block text-center text-primary hover:underline">
+              Ir para o login
+            </Link>
+          </>
         ) : user ? (
           <>
             <p className="text-center text-muted-foreground mb-6">

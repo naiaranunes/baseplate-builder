@@ -6,13 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppSettings, useUpdateAppSettings } from "@/hooks/useAppSettings";
 import {
@@ -137,28 +130,8 @@ export default function NotificacoesSettings() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t items-end">
-          <div className="space-y-1.5">
-            <Label>Disparar alerta quando desvio for maior que</Label>
-            <Select
-              value={String(settings.slack_desvio_threshold)}
-              onValueChange={(v) =>
-                persist({ slack_desvio_threshold: Number(v) }, "Threshold atualizado")
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10%</SelectItem>
-                <SelectItem value="15">15%</SelectItem>
-                <SelectItem value="20">20%</SelectItem>
-                <SelectItem value="25">25%</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30 h-[42px] mt-6">
+        <div className="pt-3 border-t">
+          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
             <Label className="cursor-pointer text-sm">Resumo semanal</Label>
             <Switch
               checked={settings.slack_resumo_semanal}
@@ -205,28 +178,8 @@ export default function NotificacoesSettings() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t items-end">
-          <div className="space-y-1.5">
-            <Label>Disparar alerta quando desvio for maior que</Label>
-            <Select
-              value={String(settings.whatsapp_desvio_threshold ?? 15)}
-              onValueChange={(v) =>
-                persist({ whatsapp_desvio_threshold: Number(v) }, "Threshold atualizado")
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10%</SelectItem>
-                <SelectItem value="15">15%</SelectItem>
-                <SelectItem value="20">20%</SelectItem>
-                <SelectItem value="25">25%</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30 h-[42px] mt-6">
+        <div className="pt-3 border-t">
+          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
             <Label className="cursor-pointer text-sm">Resumo semanal</Label>
             <Switch
               checked={settings.whatsapp_resumo_semanal ?? false}

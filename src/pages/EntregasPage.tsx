@@ -20,9 +20,10 @@ import {
   useHistorico, useLiderados, useMembros, useRegistrarRealizacao, useSalvarLiderado, useUpdateStatus,
 } from "@/hooks/useEntregas";
 import {
-  PERIODICIDADE_LABEL, SITUACAO_LABEL, STATUS_LABEL, STATUS_OPCOES, fmtPrazo, hojeISO, isConcluida, noPrazo, situacao, statusExibido,
+  entregasAtribuidas, PERIODICIDADE_LABEL, SITUACAO_LABEL, STATUS_LABEL, STATUS_OPCOES, fmtPrazo, hojeISO, isConcluida, noPrazo, situacao, statusExibido,
   type EntregaStatus, type Periodicidade, type Situacao, type StatusExibido,
 } from "@/lib/entregas";
+import { SETORES } from "@/lib/areas";
 
 const STATUS_VARIANT: Record<StatusExibido, "default" | "secondary" | "destructive" | "outline"> = {
   pendente: "outline", em_andamento: "secondary", entregue: "default", aprovada: "default", devolvida: "destructive", atrasada: "destructive",
@@ -67,11 +68,9 @@ export default function EntregasPage() {
     return (id: string | null) => (id && m.get(id)) || "—";
   }, [liderados]);
 
-  // Colaborador (sem papel de líder) vê apenas as tarefas atribuídas a ele.
   const isLider = isAdmin || isSupervisor;
-  const meusIds = new Set((liderados ?? []).filter((l) => (l.email ?? "").toLowerCase() === (user?.email ?? "").toLowerCase()).map((l) => l.id));
-  // Líder vê as entregas dos seus liderados (o banco já restringe); colaborador vê só as dele.
-  const visiveis = isLider ? (entregas ?? []) : (entregas ?? []).filter((e) => e.liderado_cadastro_id && meusIds.has(e.liderado_cadastro_id));
+  const meusIds = new Set((liderados ?? []).filter((l) => l.usuario_id === user?.id).map((l) => l.id));
+  const visiveis = entregasAtribuidas(entregas ?? [], meusIds, isAdmin);
   const todas = visiveis.filter((e) => pessoa === "todos" || e.liderado_cadastro_id === pessoa);
 
   return (
@@ -79,17 +78,19 @@ export default function EntregasPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">{isLider ? "Agenda de Entregas" : "Minhas tarefas"}</h1>
+            <h1 className="text-2xl font-bold">{isAdmin ? "Agenda de Entregas" : "Minhas tarefas"}</h1>
             <p className="text-sm text-muted-foreground">O que cada pessoa deve entregar, quando, se entregou e qual a situação.</p>
           </div>
           {isLider && <div className="flex gap-2">
-            <Select value={pessoa} onValueChange={setPessoa}>
-              <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os liderados</SelectItem>
-                {(liderados ?? []).map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {isAdmin && (
+              <Select value={pessoa} onValueChange={setPessoa}>
+                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os liderados</SelectItem>
+                  {(liderados ?? []).map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
             <Button onClick={() => (liderados?.length ? setNovoOpen(true) : toast.error("Cadastre um liderado primeiro."))}>
               <Plus className="h-4 w-4 mr-1.5" />Nova entrega
             </Button>
@@ -106,14 +107,14 @@ export default function EntregasPage() {
           {isLoading ? <Skeleton className="h-48 w-full mt-4" /> : (
             <>
               <TabsContent value="agenda"><Agenda entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} canManage={isLider} /></TabsContent>
-              <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => !meusIds.has(l.id) && (pessoa === "todos" || l.id === pessoa))} /></TabsContent>
+              {isLider && <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => (isAdmin ? pessoa === "todos" || l.id === pessoa : meusIds.has(l.id)))} /></TabsContent>}
               <TabsContent value="historico"><HistoricoGeral entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} canManage={isLider} /></TabsContent>
             </>
           )}
         </Tabs>
       </div>
 
-      <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo && !meusIds.has(l.id))} />
+      <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo && (isAdmin || !meusIds.has(l.id)))} />
       <DetalheEntrega entrega={selecionada} onClose={() => setSelecionada(null)} nome={nomeLiderado} />
     </AppShell>
   );
@@ -130,13 +131,14 @@ function TabelaEntregas({ itens, nome, onOpen, vazio, canManage }: { itens: Entr
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="text-left text-muted-foreground border-b">
-          <tr><th className="p-3">Liderado</th><th className="p-3">Entrega</th><th className="p-3">Periodicidade</th><th className="p-3">Prazo</th><th className="p-3">Realizada em</th><th className="p-3">Situação</th><th className="p-3 text-right">Ação</th></tr>
+          <tr><th className="p-3">Liderado</th><th className="p-3">Entrega</th><th className="p-3">Setor</th><th className="p-3">Periodicidade</th><th className="p-3">Prazo</th><th className="p-3">Realizada em</th><th className="p-3">Situação</th><th className="p-3 text-right">Ação</th></tr>
         </thead>
         <tbody>
           {itens.map((e) => (
             <tr key={e.id} className="border-b last:border-0 cursor-pointer hover:bg-muted/50" onClick={() => onOpen(e)}>
               <td className="p-3">{nome(e.liderado_cadastro_id)}</td>
               <td className="p-3 font-medium">{e.titulo}</td>
+              <td className="p-3">{e.area ?? "—"}</td>
               <td className="p-3">{PERIODICIDADE_LABEL[e.periodicidade]}</td>
               <td className="p-3 whitespace-nowrap">{fmtPrazo(e.prazo, e.prazo_hora)}</td>
               <td className="p-3">{e.data_realizacao ? fmt(e.data_realizacao) : "—"}</td>
@@ -229,6 +231,7 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
   const create = useCreateEntrega();
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [area, setArea] = useState("");
   const [liderado, setLiderado] = useState("");
   const [prazo, setPrazo] = useState("");
   const [hora, setHora] = useState("");
@@ -236,10 +239,15 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
 
   const [email, setEmail] = useState("");
   const salvarLiderado = useSalvarLiderado();
-  const escolherLiderado = (id: string) => { setLiderado(id); setEmail(liderados.find((l) => l.id === id)?.email ?? ""); };
+  const escolherLiderado = (id: string) => {
+    const colaborador = liderados.find((l) => l.id === id);
+    setLiderado(id);
+    setEmail(colaborador?.email ?? "");
+    setArea(SETORES.find((setor) => setor === colaborador?.area) ?? "");
+  };
 
   const salvar = async () => {
-    if (!titulo || !liderado || !prazo) return toast.error("Preencha liderado, entrega e prazo.");
+    if (!titulo || !liderado || !area || !prazo) return toast.error("Preencha liderado, setor, entrega e prazo.");
     const mail = email.trim().toLowerCase();
     if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return toast.error("E-mail inválido.");
     try {
@@ -247,13 +255,13 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
       if (mail && atual && (atual.email ?? "").toLowerCase() !== mail) {
         await salvarLiderado.mutateAsync({ id: liderado, nome: atual.nome, email: mail });
       }
-      await create.mutateAsync({ titulo, descricao: descricao || undefined, liderado_cadastro_id: liderado, prazo, prazo_hora: hora || null, periodicidade });
+      await create.mutateAsync({ titulo, descricao: descricao || undefined, area, liderado_cadastro_id: liderado, prazo, prazo_hora: hora || null, periodicidade });
       if (mail) {
         const { data, error } = await supabase.functions.invoke("convidar-colaborador", { body: { liderado_id: liderado, redirect_to: window.location.origin } });
         if (error || data?.error) toast.error("Entrega agendada, mas o convite falhou: " + (data?.error ?? error?.message));
         else toast.success(data?.status === "ja_cadastrado" ? "Entrega agendada. O colaborador já tem acesso e verá a tarefa." : "Entrega agendada e convite enviado por e-mail.");
       } else toast.success("Entrega agendada.");
-      setTitulo(""); setDescricao(""); setPrazo(""); setHora(""); setPeriodicidade("unica"); setEmail(""); setLiderado("");
+      setTitulo(""); setDescricao(""); setArea(""); setPrazo(""); setHora(""); setPeriodicidade("unica"); setEmail(""); setLiderado("");
       onOpenChange(false);
     } catch (e) { toast.error((e as Error).message); }
   };
@@ -273,6 +281,12 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
             <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="nome@empresa.com" />
             <p className="text-xs text-muted-foreground mt-1">O colaborador recebe um convite por e-mail, acessa o sistema e vê as tarefas atribuídas a ele.</p>
           </div>}
+          <div><Label>Setor *</Label>
+            <Select value={area} onValueChange={setArea}>
+              <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
+              <SelectContent>{SETORES.map((setor) => <SelectItem key={setor} value={setor}>{setor}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
           <div><Label>Entrega *</Label><Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Relatório de vendas" /></div>
           <div><Label>Descrição</Label><Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
@@ -338,6 +352,7 @@ function DetalheEntrega({ entrega, onClose, nome }: { entrega: Entrega | null; o
               {entrega.descricao && <p className="text-muted-foreground">{entrega.descricao}</p>}
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="text-muted-foreground">Liderado:</span> {nome(entrega.liderado_cadastro_id)}</div>
+                <div><span className="text-muted-foreground">Setor:</span> {entrega.area ?? "—"}</div>
                 <div><span className="text-muted-foreground">Prazo:</span> {fmtPrazo(entrega.prazo, entrega.prazo_hora)}</div>
                 <div><span className="text-muted-foreground">Periodicidade:</span> {PERIODICIDADE_LABEL[entrega.periodicidade]}</div>
                 <div><StatusBadge e={entrega} /></div>

@@ -188,9 +188,6 @@ function BurnUpMini({ meta }: { meta: MetaWithResponsavel }) {
           <span className="inline-block w-3 h-px bg-muted-foreground/60 border-t border-dashed" />
           Esperado
         </span>
-        <span className="ml-auto" style={{ color: "var(--color-blue)" }}>
-          Desvio: {Math.round((real - esperado) * 100)}pp
-        </span>
         <span className="opacity-0">.{status}</span>
       </div>
     </div>

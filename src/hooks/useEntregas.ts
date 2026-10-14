@@ -4,13 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { proximoPrazo, type EntregaStatus, type Periodicidade } from "@/lib/entregas";
 import { appUrl } from "@/lib/appUrl";
+import type { AppRole } from "@/types/auth";
 
-export type Liderado = { id: string; gestor_id: string; usuario_id: string | null; nome: string; cargo: string | null; email: string | null; area: string | null; ativo: boolean };
+export type Liderado = { id: string; gestor_id: string; usuario_id: string | null; nome: string; cargo: string | null; email: string | null; area: string | null; ativo: boolean; perfil_acesso: AppRole };
 
 export type Entrega = {
   id: string;
   titulo: string;
   descricao: string | null;
+  area: string | null;
   lider_id: string;
   liderado_cadastro_id: string | null;
   prazo: string;
@@ -31,6 +33,8 @@ export type Historico = {
   comentario: string | null;
   created_at: string;
 };
+
+let realtimeChannelSequence = 0;
 
 export function useMembros() {
   const { user } = useAuth();
@@ -73,7 +77,7 @@ export function useLideres() {
 export function useSalvarLiderado() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id?: string; nome: string; cargo?: string | null; email?: string | null; area?: string | null; gestor_id?: string; ativo?: boolean }) => {
+    mutationFn: async (input: { id?: string; nome: string; cargo?: string | null; email?: string | null; area?: string | null; gestor_id?: string; ativo?: boolean; perfil_acesso?: Exclude<AppRole, "admin"> }) => {
       const { id, ...rest } = input;
       if (id) {
         const { error } = await supabase.from("liderados").update(rest).eq("id", id);
@@ -144,7 +148,7 @@ export function useEntregas() {
     // Nome único por instância: vários componentes usam este hook ao mesmo tempo,
     // e reutilizar o mesmo nome devolve um canal já inscrito (erro do realtime).
     const channel = supabase
-      .channel(`entregas:${user.id}:${Math.random().toString(36).slice(2)}`)
+      .channel(`entregas:${user.id}:${++realtimeChannelSequence}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "entregas" },
@@ -152,7 +156,11 @@ export function useEntregas() {
           void qc.invalidateQueries({ queryKey: ["entregas"] });
         },
       )
-      .subscribe();
+      .subscribe((status, error) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.error("[Entregas] Falha ao assinar atualizações em tempo real:", error ?? status);
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
@@ -185,7 +193,7 @@ export function useHistorico(entregaId?: string) {
 export function useCreateEntrega() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { titulo: string; descricao?: string; liderado_cadastro_id: string; prazo: string; prazo_hora?: string | null; periodicidade: Periodicidade }) => {
+    mutationFn: async (input: { titulo: string; descricao?: string; area: string; liderado_cadastro_id: string; prazo: string; prazo_hora?: string | null; periodicidade: Periodicidade }) => {
       const { error } = await supabase.from("entregas").insert(input);
       if (error) throw error;
     },
@@ -225,7 +233,7 @@ export function useRegistrarRealizacao() {
       const prox = proximoPrazo(entrega.prazo, entrega.periodicidade);
       if (prox) {
         const { error: e2 } = await supabase.from("entregas").insert({
-          titulo: entrega.titulo, descricao: entrega.descricao, liderado_cadastro_id: entrega.liderado_cadastro_id,
+          titulo: entrega.titulo, descricao: entrega.descricao, area: entrega.area, liderado_cadastro_id: entrega.liderado_cadastro_id,
           prazo: prox, prazo_hora: entrega.prazo_hora, periodicidade: entrega.periodicidade,
         });
         if (e2) throw e2;
@@ -258,7 +266,13 @@ export function useExcluirUsuario() {
       const { data, error } = await supabase.functions.invoke("excluir-usuario", { body: { user_id: userId } });
       if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Erro ao excluir");
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team-members"] }); qc.invalidateQueries({ queryKey: ["lideres"] }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["team-members"] });
+      qc.invalidateQueries({ queryKey: ["lideres"] });
+      qc.invalidateQueries({ queryKey: ["liderados"] });
+      qc.invalidateQueries({ queryKey: ["entregas"] });
+      qc.invalidateQueries({ queryKey: ["notifications", "deliveries"] });
+    },
   });
 }
 

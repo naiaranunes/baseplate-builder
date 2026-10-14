@@ -81,15 +81,15 @@ const FAQS: FAQ[] = [
         <ul className="list-disc pl-5 mt-2 space-y-0.5">
           <li>
             <span style={{ color: "var(--color-green)" }}>●</span>{" "}
-            <strong>Verde</strong> — desvio melhor que -5%
+            <strong>Verde</strong> — progresso dentro do esperado
           </li>
           <li>
             <span style={{ color: "var(--color-amber)" }}>●</span>{" "}
-            <strong>Amarelo</strong> — desvio entre -5% e -20%
+            <strong>Amarelo</strong> — progresso requer atenção
           </li>
           <li>
             <span style={{ color: "var(--color-red)" }}>●</span>{" "}
-            <strong>Vermelho</strong> — desvio pior que -20%
+            <strong>Vermelho</strong> — progresso requer ação
           </li>
         </ul>
         Em entregas inversas a lógica inverte: quanto mais perto do alvo de redução,
@@ -145,8 +145,7 @@ const FAQS: FAQ[] = [
             <Link to="/configuracoes/notificacoes" className="font-medium" style={blueLink}>
               Notificações
             </Link>
-            , ative os gatilhos: alerta automático em risco, threshold de desvio
-            e resumo semanal.
+            , ative os gatilhos de alerta automático em risco e resumo semanal.
           </li>
         </ol>
       </>

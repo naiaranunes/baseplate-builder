@@ -1,5 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { noPrazo, proximoPrazo, situacao, statusExibido } from "./entregas";
+import { entregasAtribuidas, noPrazo, proximoPrazo, situacao, statusExibido } from "./entregas";
+
+describe("entregasAtribuidas", () => {
+  const entregas = [
+    { id: "leader-task", liderado_cadastro_id: "leader-profile" },
+    { id: "team-task", liderado_cadastro_id: "team-member" },
+    { id: "unassigned-task", liderado_cadastro_id: null },
+  ];
+
+  it("returns only tasks assigned to the logged-in user for non-admins", () => {
+    expect(entregasAtribuidas(entregas, new Set(["leader-profile"]), false)).toEqual([entregas[0]]);
+  });
+
+  it("returns all tasks, including unassigned tasks, for admins", () => {
+    expect(entregasAtribuidas(entregas, new Set(["leader-profile"]), true)).toEqual(entregas);
+  });
+});
 
 describe("statusExibido", () => {
   it("marca como atrasada quando o prazo passou e está pendente", () => {

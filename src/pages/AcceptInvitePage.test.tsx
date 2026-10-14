@@ -66,4 +66,15 @@ describe("AcceptInvitePage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("As senhas não coincidem.");
     expect(updateUser).not.toHaveBeenCalled();
   });
+
+  it("explains that an expired invite link must be resent", () => {
+    render(
+      <MemoryRouter initialEntries={["/accept-invite?error=access_denied&error_code=otp_expired"]}>
+        <AcceptInvitePage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/link do convite expirou ou já foi usado/i);
+    expect(screen.getByRole("link", { name: "Ir para o login" })).toHaveAttribute("href", "/auth");
+  });
 });

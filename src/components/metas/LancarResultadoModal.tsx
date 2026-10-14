@@ -69,10 +69,10 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
 
       if (mudouParaVermelho) {
         toast.warning("Lançamento salvo — esta entrega entrou em risco 🚨", {
-          description: "A IA já está analisando o desvio. Alertas podem ter sido disparados.",
+          description: "A IA já está analisando o progresso. Alertas podem ter sido disparados.",
         });
       } else {
-        toast.success("Lançamento salvo — a IA já está analisando o desvio…");
+        toast.success("Lançamento salvo — a IA já está analisando o progresso…");
       }
       onOpenChange(false);
     } catch (err) {
