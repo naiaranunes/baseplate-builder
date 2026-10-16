@@ -73,7 +73,7 @@ export function GoogleSheetsModal({ open, onOpenChange }: Props) {
               }
             />
             <p className="text-xs text-muted-foreground">
-              A URL fica salva nas configurações. Os mapeamentos de coluna por meta serão
+              A URL fica salva nas configurações. Os mapeamentos de coluna por entrega serão
               definidos na próxima fase.
             </p>
           </div>

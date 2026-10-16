@@ -8,7 +8,7 @@
 
 @layer base {
   :root {
-    /* === Gestão Wiadupla palette (hex source of truth) ===
+    /* === Gestão de Entregas Wiadupla palette (hex source of truth) ===
        --navy: #02162A   --navy-2: #07223B   --navy-3: #0E2F4D
        --blue: #0A4F95   --blue-hover: #0B5BAC   --blue-soft: #E8F0FB
        --green: #14935C  --amber: #C2820B  --red: #C0392B
@@ -80,7 +80,7 @@
     --bg-2: #ECEFF4;
     --border-hex: #E3E7ED;
 
-    /* Gestão Wiadupla-specific named tokens (raw hex via direct CSS use) */
+    /* Gestão de Entregas Wiadupla-specific named tokens (raw hex via direct CSS use) */
     --color-navy: #02162A;
     --color-navy-2: #07223B;
     --color-navy-3: #0E2F4D;
@@ -179,7 +179,7 @@
   .lp-btn-ghost-clean:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
   .lp-section-spacing { @apply py-24 lg:py-32; }
 
-  /* Gestão Wiadupla card primitives */
+  /* Gestão de Entregas Wiadupla card primitives */
   .metasia-card {
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));

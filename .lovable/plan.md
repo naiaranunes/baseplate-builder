@@ -1,17 +1,17 @@
 # Modelo de planilha para Google Sheets
 
 ## Objetivo
-No modal "Conectar Google Sheets" (Integrações), oferecer um botão para baixar uma planilha-modelo (.xlsx) já no formato esperado pela sincronização de metas, para que o usuário só precise preencher e compartilhar.
+No modal "Conectar Google Sheets" (Integrações), oferecer um botão para baixar uma planilha-modelo (.xlsx) já no formato esperado pela sincronização de entregas, para que o usuário só precise preencher e compartilhar.
 
 ## Formato proposto da planilha
 
 Arquivo: `metasia-modelo-sheets.xlsx`
 
-**Aba 1 — `Metas`** (uma linha por meta acompanhada)
+**Aba 1 — `Entregas`** (uma linha por entrega acompanhada)
 | Coluna | Exemplo | Observação |
 |---|---|---|
-| `meta_id` | `META-001` | Identificador estável, usado para casar com a meta no app |
-| `nome_meta` | `Vendas Q1` | Apenas referência humana |
+| `entrega_id` | `ENT-001` | Identificador estável, usado para casar com a entrega no app |
+| `nome_entrega` | `Vendas Q1` | Apenas referência humana |
 | `unidade` | `R$` / `un` / `%` | Texto livre |
 | `valor_alvo` | `100000` | Número |
 | `is_inverse` | `FALSE` | TRUE quando menor é melhor |
@@ -19,7 +19,7 @@ Arquivo: `metasia-modelo-sheets.xlsx`
 **Aba 2 — `Resultados`** (uma linha por lançamento)
 | Coluna | Exemplo |
 |---|---|
-| `meta_id` | `META-001` |
+| `entrega_id` | `ENT-001` |
 | `data` | `2026-01-15` (YYYY-MM-DD) |
 | `valor` | `12500` |
 | `observacao` | texto livre opcional |
@@ -46,5 +46,5 @@ Arquivo: `metasia-modelo-sheets.xlsx`
 3. Nenhuma mudança de banco, hook ou edge function — é puramente UI + util front-end.
 
 ## Fora de escopo
-- Mapeamento real coluna→meta e sincronização efetiva (continuam para a próxima fase, como já indicado no próprio modal).
+- Mapeamento real coluna→entrega e sincronização efetiva (continuam para a próxima fase, como já indicado no próprio modal).
 - Geração via Google Drive API (criar a planilha direto na conta do usuário) — fica para depois, se desejado.

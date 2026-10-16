@@ -1,16 +1,22 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { proximoPrazo, type EntregaStatus, type Periodicidade } from "@/lib/entregas";
+import { appUrl } from "@/lib/appUrl";
+import type { AppRole } from "@/types/auth";
 
-export type Liderado = { id: string; gestor_id: string; nome: string; cargo: string | null; email: string | null; area: string | null; ativo: boolean };
+export type Liderado = { id: string; gestor_id: string; usuario_id: string | null; nome: string; cargo: string | null; email: string | null; area: string | null; ativo: boolean; perfil_acesso: AppRole };
 
 export type Entrega = {
   id: string;
   titulo: string;
   descricao: string | null;
+  area: string | null;
   lider_id: string;
   liderado_cadastro_id: string | null;
   prazo: string;
+  prazo_hora: string | null;
   status: EntregaStatus;
   periodicidade: Periodicidade;
   data_realizacao: string | null;
@@ -28,9 +34,12 @@ export type Historico = {
   created_at: string;
 };
 
+let realtimeChannelSequence = 0;
+
 export function useMembros() {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["membros"],
+    queryKey: ["membros", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("list_members");
       if (error) throw error;
@@ -39,11 +48,14 @@ export function useMembros() {
   });
 }
 
-export function useLiderados() {
+export function useLiderados(gestorId?: string) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["liderados"],
+    queryKey: ["liderados", user?.id, gestorId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("liderados").select("*").order("nome");
+      let query = supabase.from("liderados").select("*");
+      if (gestorId) query = query.eq("gestor_id", gestorId);
+      const { data, error } = await query.order("nome");
       if (error) throw error;
       return (data ?? []) as Liderado[];
     },
@@ -51,8 +63,9 @@ export function useLiderados() {
 }
 
 export function useLideres() {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["lideres"],
+    queryKey: ["lideres", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("list_leaders");
       if (error) throw error;
@@ -64,14 +77,40 @@ export function useLideres() {
 export function useSalvarLiderado() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id?: string; nome: string; cargo?: string | null; email?: string | null; area?: string | null; gestor_id?: string; ativo?: boolean }) => {
+    mutationFn: async (input: { id?: string; nome: string; cargo?: string | null; email?: string | null; area?: string | null; gestor_id?: string; ativo?: boolean; perfil_acesso?: Exclude<AppRole, "admin"> }) => {
       const { id, ...rest } = input;
-      const { error } = id
-        ? await supabase.from("liderados").update(rest).eq("id", id)
-        : await supabase.from("liderados").insert(rest);
+      if (id) {
+        const { error } = await supabase.from("liderados").update(rest).eq("id", id);
+        if (error) throw error;
+        return id;
+      }
+
+      const { data, error } = await supabase.from("liderados").insert(rest).select("id").single();
       if (error) throw error;
+      return data.id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["liderados"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["liderados"] });
+      qc.invalidateQueries({ queryKey: ["colaboradores-responsaveis"] });
+    },
+  });
+}
+
+export function useConvidarColaborador() {
+  return useMutation({
+    mutationFn: async (lideradoId: string): Promise<"sent" | "already_registered"> => {
+      const { data, error } = await supabase.functions.invoke("convidar-colaborador", {
+        body: { liderado_id: lideradoId, redirect_to: appUrl("/accept-invite") },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.status === "convidado") return "sent";
+      if (data?.status === "ja_cadastrado") return "already_registered";
+      if (data?.status !== "sent" && data?.status !== "already_registered") {
+        throw new Error("Resposta inesperada ao enviar o convite.");
+      }
+      return data.status;
+    },
   });
 }
 
@@ -93,14 +132,43 @@ export function useExcluirLiderado() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["liderados"] });
+      qc.invalidateQueries({ queryKey: ["colaboradores-responsaveis"] });
       qc.invalidateQueries({ queryKey: ["entregas"] });
     },
   });
 }
 
 export function useEntregas() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Nome único por instância: vários componentes usam este hook ao mesmo tempo,
+    // e reutilizar o mesmo nome devolve um canal já inscrito (erro do realtime).
+    const channel = supabase
+      .channel(`entregas:${user.id}:${++realtimeChannelSequence}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "entregas" },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["entregas"] });
+        },
+      )
+      .subscribe((status, error) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.error("[Entregas] Falha ao assinar atualizações em tempo real:", error ?? status);
+        }
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc, user?.id]);
+
   return useQuery({
-    queryKey: ["entregas"],
+    queryKey: ["entregas", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.from("entregas").select("*").order("prazo");
       if (error) throw error;
@@ -125,11 +193,14 @@ export function useHistorico(entregaId?: string) {
 export function useCreateEntrega() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { titulo: string; descricao?: string; liderado_cadastro_id: string; prazo: string; periodicidade: Periodicidade }) => {
+    mutationFn: async (input: { titulo: string; descricao?: string; area: string; liderado_cadastro_id: string; prazo: string; prazo_hora?: string | null; periodicidade: Periodicidade }) => {
       const { error } = await supabase.from("entregas").insert(input);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["entregas"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entregas"] });
+      qc.invalidateQueries({ queryKey: ["notifications", "deliveries"] });
+    },
   });
 }
 
@@ -143,6 +214,7 @@ export function useUpdateStatus() {
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["entregas"] });
       qc.invalidateQueries({ queryKey: ["entrega_historico", v.id] });
+      qc.invalidateQueries({ queryKey: ["notifications", "deliveries"] });
     },
   });
 }
@@ -152,15 +224,17 @@ export function useRegistrarRealizacao() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ entrega, data, observacao }: { entrega: Entrega; data: string; observacao?: string }) => {
-      const { error } = await supabase.from("entregas")
-        .update({ status: "entregue", data_realizacao: data, observacao_realizacao: observacao || null })
-        .eq("id", entrega.id);
+      const { error } = await supabase.rpc("registrar_realizacao_entrega", {
+        p_entrega_id: entrega.id,
+        p_data: data,
+        p_observacao: observacao || null,
+      });
       if (error) throw error;
       const prox = proximoPrazo(entrega.prazo, entrega.periodicidade);
       if (prox) {
         const { error: e2 } = await supabase.from("entregas").insert({
-          titulo: entrega.titulo, descricao: entrega.descricao, liderado_cadastro_id: entrega.liderado_cadastro_id,
-          prazo: prox, periodicidade: entrega.periodicidade,
+          titulo: entrega.titulo, descricao: entrega.descricao, area: entrega.area, liderado_cadastro_id: entrega.liderado_cadastro_id,
+          prazo: prox, prazo_hora: entrega.prazo_hora, periodicidade: entrega.periodicidade,
         });
         if (e2) throw e2;
       }
@@ -169,6 +243,7 @@ export function useRegistrarRealizacao() {
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["entregas"] });
       qc.invalidateQueries({ queryKey: ["entrega_historico", v.entrega.id] });
+      qc.invalidateQueries({ queryKey: ["notifications", "deliveries"] });
     },
   });
 }
@@ -184,6 +259,23 @@ export function useAddComentario() {
   });
 }
 
+export function useExcluirUsuario() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("excluir-usuario", { body: { user_id: userId } });
+      if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Erro ao excluir");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["team-members"] });
+      qc.invalidateQueries({ queryKey: ["lideres"] });
+      qc.invalidateQueries({ queryKey: ["liderados"] });
+      qc.invalidateQueries({ queryKey: ["entregas"] });
+      qc.invalidateQueries({ queryKey: ["notifications", "deliveries"] });
+    },
+  });
+}
+
 export function useExcluirEntrega() {
   const qc = useQueryClient();
   return useMutation({
@@ -191,6 +283,9 @@ export function useExcluirEntrega() {
       const { error } = await supabase.from("entregas").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["entregas"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entregas"] });
+      qc.invalidateQueries({ queryKey: ["notifications", "deliveries"] });
+    },
   });
 }

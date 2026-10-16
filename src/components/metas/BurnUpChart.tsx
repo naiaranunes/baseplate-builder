@@ -97,11 +97,6 @@ function BurnUpTooltip({ active, payload, label, meta }: BurnUpTooltipProps) {
   const point = payload[0].payload;
   const dataFormatada = label ? formatDateISOToBR(label) : "—";
 
-  const desvio =
-    point.real != null && point.esperado !== 0
-      ? Math.round(((point.real - point.esperado) / point.esperado) * 100)
-      : null;
-
   return (
     <div className="bg-white border border-border rounded-lg shadow-elevation-3 p-3 min-w-[12rem] font-sans text-xs">
       <div className="font-semibold text-foreground mb-2 text-[11px] uppercase tracking-wide">
@@ -131,21 +126,6 @@ function BurnUpTooltip({ active, payload, label, meta }: BurnUpTooltipProps) {
             {formatValor(point.esperado, meta.unidade)}
           </span>
         </div>
-        {desvio != null && (
-          <div className="flex items-center justify-between gap-4 pt-1 border-t border-border/50">
-            <span className="text-muted-foreground">Desvio</span>
-            <span
-              className="font-semibold"
-              style={{
-                color:
-                  desvio < 0 ? "var(--color-red)" : desvio > 0 ? "var(--color-green)" : "var(--color-amber)",
-              }}
-            >
-              {desvio > 0 ? "+" : ""}
-              {desvio}%
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -41,7 +41,6 @@ export default function GeneralSettings() {
       .from("profiles")
       .update({
         full_name: form.full_name.trim(),
-        email: form.email.trim(),
         phone: form.phone.trim() || null,
         company: form.company.trim() || null,
         updated_at: new Date().toISOString(),

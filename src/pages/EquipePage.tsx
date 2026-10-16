@@ -14,17 +14,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TeamSettings from "@/components/settings/TeamSettings";
 import { useAuth } from "@/hooks/useAuth";
-import { useExcluirLiderado, useLideres, useLiderados, useSalvarLiderado, type Liderado } from "@/hooks/useEntregas";
+import { useConvidarColaborador, useExcluirLiderado, useLideres, useLiderados, useSalvarLiderado, type Liderado } from "@/hooks/useEntregas";
+import { SETORES } from "@/lib/areas";
 
-const AREAS_SUGERIDAS = ["Diretoria Comercial e Operações", "Obras", "Comercial/Vendas", "Administrativo", "Marketing", "Produção"];
-
-type Form = { id?: string; nome: string; cargo: string; area: string; gestor_id: string; ativo: boolean };
+type Form = { id?: string; convitePendente?: boolean; perfilAcessoAlterado?: boolean; nome: string; email: string; cargo: string; area: string; gestor_id: string; ativo: boolean; perfil_acesso: "agent" | "supervisor" };
 
 export default function EquipePage() {
   const { user, isAdmin } = useAuth();
-  const { data: liderados, isLoading } = useLiderados();
+  const { data: liderados, isLoading } = useLiderados(isAdmin ? undefined : user?.id);
   const { data: lideres } = useLideres();
   const salvar = useSalvarLiderado();
+  const convidar = useConvidarColaborador();
   const excluir = useExcluirLiderado();
 
   const [busca, setBusca] = useState("");
@@ -39,9 +39,10 @@ export default function EquipePage() {
     return (id: string) => m.get(id) ?? (id === user?.id ? "Você" : "—");
   }, [lideres, user]);
 
-  // Líder comum só pode atribuir a si mesmo; admin escolhe qualquer líder.
-  const opcoesLider = isAdmin ? lideres ?? [] : (lideres ?? []).filter((l) => l.id === user?.id);
-  const areas = Array.from(new Set([...AREAS_SUGERIDAS, ...(liderados ?? []).map((l) => l.area).filter(Boolean) as string[]]));
+  const areas = Array.from(new Set([...SETORES, ...(liderados ?? []).map((l) => l.area).filter(Boolean) as string[]]));
+  const setoresFormulario = form?.area && !SETORES.some((setor) => setor === form.area)
+    ? [...SETORES, form.area]
+    : SETORES;
 
   const lista = (liderados ?? []).filter((l) =>
     l.nome.toLowerCase().includes(busca.toLowerCase()) &&
@@ -50,24 +51,68 @@ export default function EquipePage() {
     (fStatus === "todos" || (fStatus === "ativo" ? l.ativo : !l.ativo)),
   );
 
-  const abrirNovo = () => setForm({ nome: "", cargo: "", area: "", gestor_id: user?.id ?? "", ativo: true });
-  const abrirEdicao = (l: Liderado) => setForm({ id: l.id, nome: l.nome, cargo: l.cargo ?? "", area: l.area ?? "", gestor_id: l.gestor_id, ativo: l.ativo });
+  const abrirNovo = () => setForm({ nome: "", email: "", cargo: "", area: "", gestor_id: user?.id ?? "", ativo: true, perfil_acesso: "agent" });
+  const abrirEdicao = (l: Liderado) => setForm({ id: l.id, nome: l.nome, email: l.email ?? "", cargo: l.cargo ?? "", area: l.area ?? "", gestor_id: l.gestor_id, ativo: l.ativo, perfil_acesso: l.perfil_acesso === "supervisor" ? "supervisor" : "agent" });
 
   const enviar = async () => {
     if (!form) return;
     if (!form.nome.trim()) return toast.error("Informe o nome completo.");
-    if (!form.gestor_id) return toast.error("Selecione o líder responsável.");
+    const email = form.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("Informe um e-mail válido para o colaborador.");
+    if (!form.gestor_id) return toast.error("Não foi possível identificar o responsável pela equipe.");
+    const novoColaborador = !form.id;
+    const precisaConvidar = novoColaborador || form.convitePendente || form.perfilAcessoAlterado;
     try {
-      await salvar.mutateAsync({ id: form.id, nome: form.nome.trim(), cargo: form.cargo || null, area: form.area || null, gestor_id: form.gestor_id, ativo: form.ativo });
-      toast.success(form.id ? "Liderado atualizado." : "Liderado cadastrado.");
-      setForm(null);
-    } catch (e) { toast.error((e as Error).message); }
+      const lideradoId = await salvar.mutateAsync({
+        id: form.id,
+        nome: form.nome.trim(),
+        email,
+        cargo: form.cargo || null,
+        area: form.area || null,
+        gestor_id: form.gestor_id,
+        ativo: form.ativo,
+        perfil_acesso: form.perfil_acesso,
+      });
+      if (!precisaConvidar) {
+        setForm(null);
+        toast.success("Colaborador atualizado.");
+        return;
+      }
+      try {
+        const status = await convidar.mutateAsync(lideradoId);
+        setForm(null);
+        if (status === "sent") {
+          toast.success(`Convite enviado para ${email}. O acesso será liberado após a confirmação do e-mail.`);
+        } else if (!novoColaborador) {
+          toast.success("Perfil de acesso atualizado para a conta existente.");
+        } else {
+          toast.info("Colaborador cadastrado. Este e-mail já possui uma conta e pode entrar com o login existente.");
+        }
+      } catch (error) {
+        setForm({ ...form, id: lideradoId, convitePendente: true });
+        toast.error(`Colaborador cadastrado, mas o convite não foi enviado: ${(error as Error).message}`);
+      }
+    } catch (error) { toast.error((error as Error).message); }
+  };
+
+  const reenviarConvite = async () => {
+    if (!form?.id) return;
+    try {
+      const status = await convidar.mutateAsync(form.id);
+      if (status === "sent") {
+        toast.success(`Novo convite enviado para ${form.email}. O acesso será liberado após a confirmação do e-mail.`);
+      } else {
+        toast.info("Esta conta já foi ativada. A pessoa pode entrar com o e-mail e a senha cadastrados.");
+      }
+    } catch (error) {
+      toast.error(`Não foi possível reenviar o convite: ${(error as Error).message}`);
+    }
   };
 
   const alternarStatus = async (l: Liderado) => {
     try {
       await salvar.mutateAsync({ id: l.id, nome: l.nome, ativo: !l.ativo });
-      toast.success(l.ativo ? "Liderado inativado." : "Liderado reativado.");
+      toast.success(l.ativo ? "Colaborador inativado." : "Colaborador reativado.");
     } catch (e) { toast.error((e as Error).message); }
   };
 
@@ -75,7 +120,7 @@ export default function EquipePage() {
     if (!confirm(`Remover ${l.nome}? Se houver entregas registradas, ele será apenas inativado.`)) return;
     try {
       const r = await excluir.mutateAsync(l.id);
-      toast.success(r === "inativado" ? "Possui histórico: foi inativado em vez de excluído." : "Liderado excluído.");
+      toast.success(r === "inativado" ? "Possui entregas registradas: foi inativado para preservar o histórico." : "Colaborador excluído.");
     } catch (e) { toast.error((e as Error).message); }
   };
 
@@ -86,17 +131,17 @@ export default function EquipePage() {
           <div>
             <h1 className="text-2xl font-bold">Equipe</h1>
             <p className="text-sm text-muted-foreground">
-              Líder → Liderados → Entregas. {isAdmin ? "Você vê toda a estrutura da organização." : "Você vê apenas os seus liderados."}
+              {isAdmin ? "Você vê toda a estrutura da organização." : "Você vê e gerencia apenas os colaboradores da sua equipe."}
             </p>
           </div>
-          <Button onClick={abrirNovo}><Plus className="h-4 w-4 mr-1.5" />Novo liderado</Button>
+          <Button onClick={abrirNovo}><Plus className="h-4 w-4 mr-1.5" />Novo colaborador</Button>
         </div>
 
         <Tabs defaultValue="liderados">
           {isAdmin && (
             <TabsList>
-              <TabsTrigger value="liderados">Liderados</TabsTrigger>
-              <TabsTrigger value="lideres">Líderes</TabsTrigger>
+              <TabsTrigger value="liderados">Colaboradores</TabsTrigger>
+              <TabsTrigger value="lideres">Usuários</TabsTrigger>
             </TabsList>
           )}
           <TabsContent value="liderados" className="space-y-5 mt-4">
@@ -141,7 +186,7 @@ export default function EquipePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lista.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum liderado encontrado.</TableCell></TableRow>}
+                {lista.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum colaborador encontrado.</TableCell></TableRow>}
                 {lista.map((l) => (
                   <TableRow key={l.id} className="cursor-pointer" onClick={() => setDetalhe(l)}>
                     <TableCell className="font-medium">{l.nome}</TableCell>
@@ -163,9 +208,6 @@ export default function EquipePage() {
           </TabsContent>
           {isAdmin && (
             <TabsContent value="lideres" className="mt-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Líderes são usuários da plataforma com papel de <strong>Supervisor</strong> ou <strong>Admin</strong>. Convide a pessoa, aprove o cadastro e defina o papel — ela passa a aparecer como opção de líder responsável.
-              </p>
               <TeamSettings />
             </TabsContent>
           )}
@@ -174,26 +216,48 @@ export default function EquipePage() {
 
       <Dialog open={!!form} onOpenChange={(o) => !o && setForm(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{form?.id ? "Editar liderado" : "Novo liderado"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{form?.convitePendente ? "Enviar convite pendente" : form?.id ? "Editar colaborador" : "Novo colaborador"}</DialogTitle></DialogHeader>
           {form && (
             <div className="space-y-3">
               <div><Label>Nome completo</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
+              <div>
+                <Label>E-mail para convite *</Label>
+                <Input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  O convite para entrar na plataforma e concluir o cadastro será enviado para este endereço.
+                </p>
+              </div>
               <div><Label>Cargo/Função</Label><Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} /></div>
               <div>
-                <Label>Área/Departamento</Label>
-                <Input list="areas-sugeridas" value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} placeholder="Ex.: Comercial/Vendas" />
-                <datalist id="areas-sugeridas">{areas.map((a) => <option key={a} value={a} />)}</datalist>
-              </div>
-              <div>
-                <Label>Líder responsável</Label>
-                <Select value={form.gestor_id} onValueChange={(v) => setForm({ ...form, gestor_id: v })} disabled={!isAdmin}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+
+                <Label>Setor</Label>
+                <Select value={form.area} onValueChange={(area) => setForm({ ...form, area })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o setor" /></SelectTrigger>
                   <SelectContent>
-                    {opcoesLider.length === 0 && user && <SelectItem value={user.id}>Você</SelectItem>}
-                    {opcoesLider.map((l) => <SelectItem key={l.id} value={l.id}>{l.full_name}</SelectItem>)}
+                    {setoresFormulario.map((setor) => <SelectItem key={setor} value={setor}>{setor}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                {!isAdmin && <p className="text-xs text-muted-foreground mt-1">Somente administradores podem transferir para outro líder.</p>}
+              </div>
+              <div>
+                <Label>Tipo de usuário</Label>
+                <Select
+                  value={isAdmin ? form.perfil_acesso : "agent"}
+                  onValueChange={(perfil_acesso: "agent" | "supervisor") => setForm({ ...form, perfil_acesso, perfilAcessoAlterado: true })}
+                  disabled={!isAdmin}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agent">Colaborador</SelectItem>
+                    {isAdmin && <SelectItem value="supervisor">Líder</SelectItem>}
+                  </SelectContent>
+                </Select>
+                {!isAdmin && <p className="text-xs text-muted-foreground mt-1">Líderes podem cadastrar apenas colaboradores.</p>}
               </div>
               <div>
                 <Label>Status</Label>
@@ -206,7 +270,14 @@ export default function EquipePage() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setForm(null)}>Cancelar</Button>
-            <Button onClick={enviar} disabled={salvar.isPending}>Salvar</Button>
+            {form?.id && form.email && (
+              <Button variant="outline" onClick={reenviarConvite} disabled={convidar.isPending || salvar.isPending}>
+                Reenviar convite
+              </Button>
+            )}
+            <Button onClick={enviar} disabled={salvar.isPending || convidar.isPending}>
+              {form?.convitePendente ? "Reenviar convite" : form?.id ? "Salvar alterações" : "Cadastrar e enviar convite"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

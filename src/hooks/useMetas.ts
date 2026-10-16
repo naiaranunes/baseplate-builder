@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import type {
   Comentario,
   Lancamento,
@@ -10,9 +12,43 @@ import type {
   Status,
 } from "@/lib/metas";
 
-const METAS_KEY = ["entregas"] as const;
+const METAS_KEY = ["metas"] as const;
+let realtimeChannelSequence = 0;
 
 export function useMetas() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`metas-dashboard:${user.id}:${++realtimeChannelSequence}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "metas" },
+        () => {
+          void qc.invalidateQueries({ queryKey: METAS_KEY });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "meta_lancamentos" },
+        () => {
+          void qc.invalidateQueries({ queryKey: METAS_KEY });
+        },
+      )
+      .subscribe((status, error) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.error("[Metas] Falha ao assinar atualizações em tempo real:", error ?? status);
+        }
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [qc, user?.id]);
+
   return useQuery({
     queryKey: METAS_KEY,
     queryFn: async (): Promise<MetaWithResponsavel[]> => {
@@ -28,7 +64,7 @@ export function useMetas() {
 
 export function useMeta(id: string | undefined) {
   return useQuery({
-    queryKey: ["entregas", id],
+    queryKey: [...METAS_KEY, id],
     enabled: !!id,
     queryFn: async (): Promise<MetaWithResponsavel | null> => {
       if (!id) return null;
@@ -45,7 +81,7 @@ export function useMeta(id: string | undefined) {
 
 export function useLancamentos(metaId: string | undefined) {
   return useQuery({
-    queryKey: ["entregas", metaId, "lancamentos"],
+    queryKey: [...METAS_KEY, metaId, "lancamentos"],
     enabled: !!metaId,
     queryFn: async (): Promise<Lancamento[]> => {
       if (!metaId) return [];
@@ -63,7 +99,7 @@ export function useLancamentos(metaId: string | undefined) {
 
 export function useComentarios(metaId: string | undefined) {
   return useQuery({
-    queryKey: ["entregas", metaId, "comentarios"],
+    queryKey: [...METAS_KEY, metaId, "comentarios"],
     enabled: !!metaId,
     queryFn: async (): Promise<Comentario[]> => {
       if (!metaId) return [];
@@ -78,18 +114,24 @@ export function useComentarios(metaId: string | undefined) {
   });
 }
 
-export function useMembros() {
+export function useColaboradoresResponsaveis(enabled = true) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["membros"],
+    queryKey: ["colaboradores-responsaveis", user?.id],
+    enabled: enabled && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, avatar_url")
-        .eq("is_active", true)
-        .eq("is_approved", true)
-        .order("full_name", { ascending: true });
+        .from("liderados")
+        .select("id, usuario_id, nome, ativo")
+        .order("nome", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+
+      return (data ?? []).map((colaborador) => ({
+        id: colaborador.usuario_id,
+        cadastroId: colaborador.id,
+        full_name: colaborador.nome,
+        ativo: colaborador.ativo,
+      }));
     },
   });
 }
@@ -125,6 +167,7 @@ export function useCreateMeta() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: METAS_KEY });
+      qc.invalidateQueries({ queryKey: ["colaboradores-responsaveis"] });
     },
   });
 }
@@ -144,7 +187,7 @@ export function useUpdateMeta() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: METAS_KEY });
-      qc.invalidateQueries({ queryKey: ["entregas", vars.id] });
+      qc.invalidateQueries({ queryKey: [...METAS_KEY, vars.id] });
     },
   });
 }
@@ -222,8 +265,8 @@ export function useLancarResultado() {
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: METAS_KEY });
-      qc.invalidateQueries({ queryKey: ["entregas", vars.meta_id] });
-      qc.invalidateQueries({ queryKey: ["entregas", vars.meta_id, "lancamentos"] });
+      qc.invalidateQueries({ queryKey: [...METAS_KEY, vars.meta_id] });
+      qc.invalidateQueries({ queryKey: [...METAS_KEY, vars.meta_id, "lancamentos"] });
     },
   });
 }
@@ -243,7 +286,7 @@ export function useCreateComentario() {
       return data as Comentario;
     },
     onSuccess: (_d, vars) => {
-      qc.invalidateQueries({ queryKey: ["entregas", vars.metaId, "comentarios"] });
+      qc.invalidateQueries({ queryKey: [...METAS_KEY, vars.metaId, "comentarios"] });
     },
   });
 }

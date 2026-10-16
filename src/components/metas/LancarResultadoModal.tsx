@@ -69,10 +69,10 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
 
       if (mudouParaVermelho) {
         toast.warning("Lançamento salvo — esta entrega entrou em risco 🚨", {
-          description: "A IA já está analisando o desvio. Alertas podem ter sido disparados.",
+          description: "A IA já está analisando o progresso. Alertas podem ter sido disparados.",
         });
       } else {
-        toast.success("Lançamento salvo — a IA já está analisando o desvio…");
+        toast.success("Lançamento salvo — a IA já está analisando o progresso…");
       }
       onOpenChange(false);
     } catch (err) {
@@ -87,7 +87,7 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
         <DialogHeader>
           <DialogTitle>Lançar resultado</DialogTitle>
           <DialogDescription>
-            O status da meta será recalculado automaticamente após o lançamento.
+            O status da entrega será recalculado automaticamente após o lançamento.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -121,25 +121,6 @@ export function LancarResultadoModal({ open, onOpenChange, metaId }: Props) {
                 type="date"
                 value={data}
                 onChange={(e) => setData(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="valor">
-                Valor realizado *{" "}
-                {meta && (
-                  <span className="text-xs font-normal text-muted-foreground">
-                    (em {meta.unidade})
-                  </span>
-                )}
-              </Label>
-              <Input
-                id="valor"
-                type="text"
-                inputMode="decimal"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                placeholder="Ex: 87400"
                 required
               />
             </div>

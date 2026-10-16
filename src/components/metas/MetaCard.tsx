@@ -126,7 +126,7 @@ export function MetaCard({ meta, defaultOpen, onLancarResultado, onVerHistorico 
               Ver histórico
             </Button>
             <Button size="sm" variant="outline" asChild>
-              <Link to={`/metas/${meta.id}/analise`}>
+              <Link to={`/entregas/${meta.id}/analise`}>
                 <Sparkles className="h-4 w-4 mr-1.5" />
                 Análise IA
               </Link>
@@ -187,9 +187,6 @@ function BurnUpMini({ meta }: { meta: MetaWithResponsavel }) {
         <span className="flex items-center gap-1">
           <span className="inline-block w-3 h-px bg-muted-foreground/60 border-t border-dashed" />
           Esperado
-        </span>
-        <span className="ml-auto" style={{ color: "var(--color-blue)" }}>
-          Desvio: {Math.round((real - esperado) * 100)}pp
         </span>
         <span className="opacity-0">.{status}</span>
       </div>

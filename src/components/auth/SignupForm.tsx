@@ -28,15 +28,18 @@ export function SignupForm() {
     const parsed = schema.safeParse(form);
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setLoading(true);
-    const { error, pending, isApproved } = await signUp(form.fullName, form.email, form.password);
+    const { error, emailConfirmationRequired, isApproved, role } = await signUp(form.fullName, form.email, form.password);
     setLoading(false);
     if (error) { toast.error(error); return; }
-    if (isApproved === false) {
+    if (emailConfirmationRequired) {
+      toast.info("Confirme seu e-mail pelo link recebido para liberar o acesso. Se já possui uma conta, entre com ela.");
+      navigate("/auth", { replace: true });
+    } else if (isApproved === false) {
       toast.info("Conta criada! Aguardando confirmação de email e aprovação do administrador.");
       navigate("/pending-approval", { replace: true });
     } else if (isApproved === true) {
       toast.success("Conta criada com sucesso!");
-      navigate("/dashboard", { replace: true });
+      navigate(role ? "/dashboard" : "/", { replace: true });
     } else {
       // Fallback when profile not yet readable (email confirmation required)
       toast.info("Conta criada! Verifique seu email para confirmar o cadastro.");

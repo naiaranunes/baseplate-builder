@@ -25,7 +25,6 @@ import { StatusChip } from "@/components/metas/StatusChip";
 import { useMetas } from "@/hooks/useMetas";
 import {
   AREAS,
-  desvioPercentual,
   formatDateISOToBR,
   formatValor,
   progressoReal,
@@ -82,7 +81,6 @@ function downloadCSV(entregas: MetaWithResponsavel[]) {
     "Valor alvo",
     "Unidade",
     "Progresso (%)",
-    "Desvio (pp)",
     "Status",
     "Periodicidade",
     "Data início",
@@ -100,7 +98,6 @@ function downloadCSV(entregas: MetaWithResponsavel[]) {
       m.valor_alvo,
       m.unidade,
       real,
-      desvioPercentual(m),
       m.status,
       m.periodicidade,
       m.data_inicio,
@@ -388,7 +385,7 @@ export default function RelatoriosPage() {
                 <FileText className="h-6 w-6" style={{ color: "var(--color-blue)" }} />
               </div>
               <p className="text-sm text-muted-foreground">
-                Nenhuma meta atende aos filtros aplicados.
+                Nenhuma entrega atende aos filtros aplicados.
               </p>
             </div>
           ) : (
@@ -409,9 +406,6 @@ export default function RelatoriosPage() {
                       Progresso
                     </th>
                     <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
-                      Desvio
-                    </th>
-                    <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
                       Status
                     </th>
                     <th className="px-4 py-2.5 font-medium text-xs uppercase tracking-wide text-muted-foreground">
@@ -423,7 +417,6 @@ export default function RelatoriosPage() {
                   {filtered.map((m) => {
                     const s = m.status as Status;
                     const real = progressoReal(m.valor_atual, m.valor_alvo, m.is_inverse);
-                    const desvio = desvioPercentual(m);
                     return (
                       <tr key={m.id} className="border-t hover:bg-muted/30">
                         <td className="px-4 py-3 font-medium">{m.nome}</td>
@@ -458,22 +451,6 @@ export default function RelatoriosPage() {
                               {Math.round(real * 100)}%
                             </div>
                           </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className="text-xs font-semibold"
-                            style={{
-                              color:
-                                desvio < -20
-                                  ? "var(--color-red)"
-                                  : desvio < -5
-                                    ? "var(--color-amber)"
-                                    : "var(--color-green)",
-                            }}
-                          >
-                            {desvio > 0 ? "+" : ""}
-                            {desvio}pp
-                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <StatusChip status={s} size="sm" />

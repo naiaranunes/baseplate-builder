@@ -1,6 +1,6 @@
 import { requireUser, unauthorizedResponse } from "../_shared/auth.ts";
-// Análise de saúde de uma meta usando Lovable AI Gateway.
-// Recebe contexto completo da meta + últimos lançamentos. Retorna diagnóstico,
+// Análise de saúde de uma entrega usando Lovable AI Gateway.
+// Recebe contexto completo da entrega + últimos lançamentos. Retorna diagnóstico,
 // 3 ações recomendadas, previsão final e veredicto vai_bater.
 
 const corsHeaders = {
@@ -10,9 +10,6 @@ const corsHeaders = {
 };
 
 type Lanc = { data: string; valor: number };
-
-type PlanoTarefa = { descricao: string; concluida: boolean; prazo: string | null };
-type PlanoCtx = { titulo: string; criado_em?: string; tarefas: PlanoTarefa[] };
 
 type Input = {
   meta_id: string;
@@ -26,7 +23,6 @@ type Input = {
   data_fim: string;
   is_inverse: boolean;
   historico: Lanc[];
-  planos?: PlanoCtx[];
 };
 
 type Output = {
@@ -37,27 +33,26 @@ type Output = {
 };
 
 const SYSTEM_PROMPT = `Você é um analista de performance especialista em OKRs e KPIs.
-Receberá os dados de uma meta (nome, área, alvo, atual, datas, periodicidade, se é inversa), o histórico de lançamentos e os planos de ação já em execução com suas tarefas (status e prazo).
+Receberá os dados de uma meta (nome, área, alvo, atual, datas, periodicidade, se é inversa), o histórico de lançamentos.
 
 Responda APENAS com um JSON válido (sem markdown, sem texto antes/depois), com este formato exato:
 {
-  "diagnostico": "2 a 3 parágrafos diretos em português do Brasil explicando a saúde da meta, ritmo, sazonalidade visível, principais riscos E uma avaliação crítica dos planos de ação atuais (coerência com o gap, cobertura das alavancas certas, tarefas atrasadas ou genéricas)",
+  "diagnostico": "2 a 3 parágrafos diretos em português do Brasil explicando a saúde da meta, ritmo, sazonalidade visível, principais riscos",
   "acoes": [
     {"titulo": "Ação curta (até 80 caracteres)", "contexto": "1 a 2 frases com o porquê e como executar"},
     {"titulo": "...", "contexto": "..."},
     {"titulo": "...", "contexto": "..."}
   ],
   "previsao_final": número (estimativa do valor final na data_fim baseada na tendência),
-  "vai_bater": boolean (true se a previsao_final >= valor_alvo ou, em meta inversa, <= valor_alvo)
+  "vai_bater": boolean (true se a previsao_final >= valor_alvo ou, em entrega inversa, <= valor_alvo)
 }
 
 Regras:
 - SEMPRE 3 ações (nem mais nem menos).
 - Use linguagem executiva, sem jargão de IA.
-- Em meta inversa (menor é melhor): trate a redução em direção ao alvo como o "progresso" positivo.
+- Em entrega inversa (menor é melhor): trate a redução em direção ao alvo como o "progresso" positivo.
 - Nunca invente dados além do histórico fornecido.
-- Ao sugerir ações, NÃO repita tarefas que já estão nos planos atuais (a menos que precise reforçá-las explicitamente, deixando claro o porquê). Priorize alavancas ausentes ou complementares.
-- Se os planos existentes estiverem coerentes, diga isso no diagnóstico antes de sugerir o próximo passo.`;
+- Sugira orientações de acompanhamento com base nos dados da entrega. Não proponha criar planos de ação.`;
 
 
 Deno.serve(async (req) => {
@@ -82,7 +77,7 @@ Deno.serve(async (req) => {
 
     const input = (await req.json()) as Input;
     if (!input?.meta_nome || !Number.isFinite(input.valor_alvo)) {
-      return json({ error: "Payload inválido — meta_nome e valor_alvo são obrigatórios." }, 400);
+      return json({ error: "Payload inválido — nome da entrega e valor alvo são obrigatórios." }, 400);
     }
 
     const historicoTxt =
@@ -91,25 +86,6 @@ Deno.serve(async (req) => {
             .map((l) => `- ${l.data}: ${l.valor}`)
             .join("\n")
         : "(sem lançamentos registrados ainda)";
-
-    const planosTxt =
-      input.planos?.length
-        ? input.planos
-            .map((p, i) => {
-              const tarefas = p.tarefas?.length
-                ? p.tarefas
-                    .map(
-                      (t) =>
-                        `    - [${t.concluida ? "x" : " "}] ${t.descricao}${
-                          t.prazo ? ` (prazo: ${t.prazo})` : ""
-                        }`,
-                    )
-                    .join("\n")
-                : "    (sem tarefas)";
-              return `  ${i + 1}. ${p.titulo}\n${tarefas}`;
-            })
-            .join("\n")
-        : "(nenhum plano de ação vinculado ainda)";
 
     const userPrompt = `Meta: ${input.meta_nome}
 Área: ${input.area ?? "—"}
@@ -123,12 +99,9 @@ Janela: ${input.data_inicio} → ${input.data_fim}
 Histórico de lançamentos:
 ${historicoTxt}
 
-Planos de ação em execução:
-${planosTxt}
-
 Hoje é ${new Date().toISOString().slice(0, 10)}.
 
-Gere a análise no formato JSON especificado, comentando no diagnóstico se os planos atuais estão cobrindo as alavancas certas.`;
+Gere a análise no formato JSON especificado.`;
 
 
     const model = Deno.env.get("LOVABLE_AI_MODEL") ?? "google/gemini-2.5-flash";
@@ -230,7 +203,7 @@ function validate(p: unknown): Output | null {
   while (acoes.length < 3) {
     acoes.push({
       titulo: "Revisar premissas com o time",
-      contexto: "Aprofundar análise junto ao responsável pela meta para identificar próximas alavancas.",
+      contexto: "Aprofundar análise junto ao responsável pela entrega para identificar próximas alavancas.",
     });
   }
 

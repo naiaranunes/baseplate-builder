@@ -32,6 +32,17 @@ Deno.serve(async (req) => {
 
     const userId = userData.user.id;
 
+    if (!userData.user.email_confirmed_at) {
+      try {
+        await admin.auth.admin.signOut(userId);
+      } catch (error) {
+        console.error("[check-user-active] Failed to sign out unverified user:", error);
+      }
+      return new Response(JSON.stringify({ active: false, approved: false, emailConfirmed: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Check admin role first — admins are never blocked.
     const { data: roleRow } = await admin
       .from("user_roles")

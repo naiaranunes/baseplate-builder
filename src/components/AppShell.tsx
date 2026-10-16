@@ -4,17 +4,21 @@ import { Bell, ChevronRight } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { AppSidebar } from "@/components/AppSidebar";
-import { LancarResultadoModal } from "@/components/metas/LancarResultadoModal";
+import { LancarEntregaModal } from "@/components/LancarEntregaModal";
 import { NotificationsDrawer } from "@/components/NotificationsDrawer";
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
-  metas: "Minhas Entregas",
+  metas: "Entregas",
+  entregas: "Entregas",
+  "gestao-entregas": "Entregas",
   analise: "Análise de Saúde",
-  planos: "Planos de Ação",
   relatorios: "Relatórios",
   ajuda: "Ajuda",
   configuracoes: "Configurações",
+  "agenda-entregas": "Agenda de Entregas",
+  "minhas-entregas": "Minhas Entregas",
+  perfil: "Meu perfil",
 };
 
 function buildBreadcrumb(pathname: string): { label: string; href: string }[] {
@@ -30,7 +34,15 @@ function buildBreadcrumb(pathname: string): { label: string; href: string }[] {
   return crumbs;
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+type AppShellActions = {
+  openLancarEntrega: () => void;
+};
+
+type AppShellProps = {
+  children: ReactNode | ((actions: AppShellActions) => ReactNode);
+};
+
+export function AppShell({ children }: AppShellProps) {
   const { pathname } = useLocation();
   const [lancarOpen, setLancarOpen] = useState(false);
   const [notifsOpen, setNotifsOpen] = useState(false);
@@ -76,11 +88,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+          <main className="flex-1 p-6 overflow-y-auto">
+            {typeof children === "function"
+              ? children({ openLancarEntrega: () => setLancarOpen(true) })
+              : children}
+          </main>
         </div>
       </div>
 
-      <LancarResultadoModal open={lancarOpen} onOpenChange={setLancarOpen} />
+      <LancarEntregaModal open={lancarOpen} onOpenChange={setLancarOpen} />
       <NotificationsDrawer open={notifsOpen} onOpenChange={setNotifsOpen} />
     </SidebarProvider>
   );

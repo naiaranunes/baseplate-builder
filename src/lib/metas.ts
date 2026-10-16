@@ -6,8 +6,6 @@ export type MetaUpdate = Database["public"]["Tables"]["metas"]["Update"];
 export type MetaWithResponsavel = Database["public"]["Views"]["metas_with_responsavel"]["Row"];
 export type Lancamento = Database["public"]["Tables"]["meta_lancamentos"]["Row"];
 export type Comentario = Database["public"]["Tables"]["meta_comentarios"]["Row"];
-export type Plano = Database["public"]["Tables"]["planos_acao"]["Row"];
-export type Tarefa = Database["public"]["Tables"]["plano_tarefas"]["Row"];
 export type AppSettings = Database["public"]["Tables"]["app_settings"]["Row"];
 
 export type Status = "verde" | "amarelo" | "vermelho";
@@ -61,13 +59,6 @@ export function progressoEsperado(dataInicio: string, dataFim: string): number {
   if (hoje <= inicio) return 0;
   if (hoje >= fim) return 1;
   return (hoje - inicio) / (fim - inicio);
-}
-
-/** Desvio em pontos percentuais entre progresso real e esperado. */
-export function desvioPercentual(meta: Pick<Meta, "valor_atual" | "valor_alvo" | "data_inicio" | "data_fim" | "is_inverse">): number {
-  const real = progressoReal(meta.valor_atual, meta.valor_alvo, meta.is_inverse);
-  const esperado = progressoEsperado(meta.data_inicio, meta.data_fim);
-  return Math.round((real - esperado) * 100);
 }
 
 export function formatValor(valor: number, unidade: string): string {

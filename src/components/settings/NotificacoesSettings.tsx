@@ -6,13 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppSettings, useUpdateAppSettings } from "@/hooks/useAppSettings";
 import {
@@ -33,7 +26,6 @@ const CANAL_LABEL: Record<string, string> = {
 const EVENTO_LABEL: Record<string, string> = {
   meta_risco: "Entrega em risco",
   meta_criada: "Nova entrega",
-  plano_criado: "Plano criado",
   resumo_semanal: "Resumo semanal",
   custom: "Personalizado",
 };
@@ -126,7 +118,7 @@ export default function NotificacoesSettings() {
           <div className="space-y-0.5">
             <Label className="cursor-pointer">Alertas automáticos via Slack</Label>
             <p className="text-xs text-muted-foreground">
-              Envia uma mensagem ao canal sempre que uma meta entra em risco (status vermelho).
+              Envia uma mensagem ao canal sempre que uma entrega entra em risco (status vermelho).
             </p>
           </div>
           <Switch
@@ -138,28 +130,8 @@ export default function NotificacoesSettings() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t items-end">
-          <div className="space-y-1.5">
-            <Label>Disparar alerta quando desvio for maior que</Label>
-            <Select
-              value={String(settings.slack_desvio_threshold)}
-              onValueChange={(v) =>
-                persist({ slack_desvio_threshold: Number(v) }, "Threshold atualizado")
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10%</SelectItem>
-                <SelectItem value="15">15%</SelectItem>
-                <SelectItem value="20">20%</SelectItem>
-                <SelectItem value="25">25%</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30 h-[42px] mt-6">
+        <div className="pt-3 border-t">
+          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
             <Label className="cursor-pointer text-sm">Resumo semanal</Label>
             <Switch
               checked={settings.slack_resumo_semanal}
@@ -191,7 +163,7 @@ export default function NotificacoesSettings() {
           <div className="space-y-0.5">
             <Label className="cursor-pointer">Alertas automáticos via WhatsApp</Label>
             <p className="text-xs text-muted-foreground">
-              Envia uma mensagem pela Evolution API sempre que uma meta entra em risco.
+              Envia uma mensagem pela Evolution API sempre que uma entrega entra em risco.
             </p>
           </div>
           <Switch
@@ -206,28 +178,8 @@ export default function NotificacoesSettings() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pt-3 border-t items-end">
-          <div className="space-y-1.5">
-            <Label>Disparar alerta quando desvio for maior que</Label>
-            <Select
-              value={String(settings.whatsapp_desvio_threshold ?? 15)}
-              onValueChange={(v) =>
-                persist({ whatsapp_desvio_threshold: Number(v) }, "Threshold atualizado")
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10%</SelectItem>
-                <SelectItem value="15">15%</SelectItem>
-                <SelectItem value="20">20%</SelectItem>
-                <SelectItem value="25">25%</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30 h-[42px] mt-6">
+        <div className="pt-3 border-t">
+          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
             <Label className="cursor-pointer text-sm">Resumo semanal</Label>
             <Switch
               checked={settings.whatsapp_resumo_semanal ?? false}

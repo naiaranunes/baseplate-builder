@@ -9,6 +9,7 @@ import TeamSettings from "@/components/settings/TeamSettings";
 import DemonstrationSettings from "@/components/settings/DemonstrationSettings";
 import NotificacoesSettings from "@/components/settings/NotificacoesSettings";
 import OnboardingSettings from "@/components/settings/OnboardingSettings";
+import ChangePasswordSettings from "@/components/settings/ChangePasswordSettings";
 import { useAuth } from "@/hooks/useAuth";
 
 const VALID_TABS = [
@@ -58,12 +59,29 @@ function getTabFromPath(pathname: string): Tab {
   return (VALID_TABS as readonly string[]).includes(segment) ? (segment as Tab) : "general";
 }
 
-export default function SettingsPage() {
+export default function SettingsPage({ profileOnly = false }: { profileOnly?: boolean }) {
   const { isAdmin } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const activeTab = getTabFromPath(pathname);
   const meta = TAB_META[activeTab];
+
+  if (profileOnly) {
+    return (
+      <AppShell>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold">Meu perfil</h1>
+            <p className="text-sm text-muted-foreground">
+              Personalize suas informações pessoais na plataforma.
+            </p>
+          </div>
+          <GeneralSettings />
+          <ChangePasswordSettings />
+        </div>
+      </AppShell>
+    );
+  }
 
   const handleChange = (value: string) => {
     navigate(value === "general" ? "/configuracoes" : `/configuracoes/${value}`);
