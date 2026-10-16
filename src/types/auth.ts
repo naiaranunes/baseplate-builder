@@ -36,7 +36,7 @@ export interface AuthContextValue {
   isActive: boolean;
   isPendingApproval: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string; isApproved?: boolean; isActive?: boolean; role?: AppRole }>;
-  signUp: (fullName: string, email: string, password: string) => Promise<{ error?: string; pending?: boolean; isApproved?: boolean; role?: AppRole }>;
+  signUp: (fullName: string, email: string, password: string) => Promise<{ error?: string; pending?: boolean; emailConfirmationRequired?: boolean; isApproved?: boolean; role?: AppRole }>;
   signOut: () => Promise<void>;
   clearPasswordRecovery: () => void;
   refreshProfile: () => Promise<void>;

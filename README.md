@@ -48,6 +48,18 @@ em [`supabase/migrations`](supabase/migrations) que toca em `handle_new_user`.
 2. Acesse `/settings` (aba Segurança) para configurar aprovação e domínios
 3. Acesse `/settings` (aba Chaves de API) para configurar integrações
 
+## Confirmação de e-mail
+
+Para liberar o acesso somente após comprovar que a pessoa recebe mensagens no
+endereço informado, mantenha **Confirm email** habilitado em
+**Supabase → Authentication → Providers → Email**. O cadastro envia um link de
+confirmação; convites de equipe também só liberam o acesso depois que o
+destinatário abre o link. Configure em **Authentication → URL Configuration**
+o domínio público como **Site URL** e permita o redirecionamento para `/` e
+`/accept-invite`. Se a confirmação estiver desabilitada no Supabase, o próprio
+Supabase considera o e-mail confirmado automaticamente, sem comprovar acesso à
+caixa postal.
+
 ## Recuperação de senha
 
 O link de recuperação aponta por padrão para

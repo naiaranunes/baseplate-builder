@@ -82,7 +82,7 @@ export default function EquipePage() {
         const status = await convidar.mutateAsync(lideradoId);
         setForm(null);
         if (status === "sent") {
-          toast.success(`Colaborador cadastrado. Convite enviado para ${email}.`);
+          toast.success(`Convite enviado para ${email}. O acesso será liberado após a confirmação do e-mail.`);
         } else if (!novoColaborador) {
           toast.success("Perfil de acesso atualizado para a conta existente.");
         } else {
@@ -100,7 +100,7 @@ export default function EquipePage() {
     try {
       const status = await convidar.mutateAsync(form.id);
       if (status === "sent") {
-        toast.success(`Novo convite enviado para ${form.email}.`);
+        toast.success(`Novo convite enviado para ${form.email}. O acesso será liberado após a confirmação do e-mail.`);
       } else {
         toast.info("Esta conta já foi ativada. A pessoa pode entrar com o e-mail e a senha cadastrados.");
       }

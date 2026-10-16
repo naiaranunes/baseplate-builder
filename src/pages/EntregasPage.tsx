@@ -14,9 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import {
-  type Entrega, type Liderado, useAddComentario, useCreateEntrega, useEntregas, useExcluirEntrega, useExcluirLiderado,
+  type Entrega, type Liderado, useAddComentario, useConvidarColaborador, useCreateEntrega, useEntregas, useExcluirEntrega, useExcluirLiderado,
   useHistorico, useLiderados, useMembros, useRegistrarRealizacao, useSalvarLiderado, useUpdateStatus,
 } from "@/hooks/useEntregas";
 import {
@@ -69,8 +68,11 @@ export default function EntregasPage() {
   }, [liderados]);
 
   const isLider = isAdmin || isSupervisor;
-  const meusIds = new Set((liderados ?? []).filter((l) => l.usuario_id === user?.id).map((l) => l.id));
-  const visiveis = entregasAtribuidas(entregas ?? [], meusIds, isAdmin);
+  const idsVisiveis = new Set((liderados ?? [])
+    .filter((l) => l.usuario_id === user?.id || (isSupervisor && l.gestor_id === user?.id))
+    .map((l) => l.id));
+  const lideradosFiltraveis = (liderados ?? []).filter((l) => isAdmin || l.gestor_id === user?.id);
+  const visiveis = entregasAtribuidas(entregas ?? [], idsVisiveis, isAdmin);
   const todas = visiveis.filter((e) => pessoa === "todos" || e.liderado_cadastro_id === pessoa);
 
   return (
@@ -78,16 +80,16 @@ export default function EntregasPage() {
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold">{isAdmin ? "Agenda de Entregas" : "Minhas tarefas"}</h1>
+            <h1 className="text-2xl font-bold">{isLider ? "Agenda de Entregas" : "Minhas tarefas"}</h1>
             <p className="text-sm text-muted-foreground">O que cada pessoa deve entregar, quando, se entregou e qual a situação.</p>
           </div>
           {isLider && <div className="flex gap-2">
-            {isAdmin && (
+            {isLider && (
               <Select value={pessoa} onValueChange={setPessoa}>
                 <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos os liderados</SelectItem>
-                  {(liderados ?? []).map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+                  <SelectItem value="todos">Todos os colaboradores</SelectItem>
+                  {lideradosFiltraveis.map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             )}
@@ -107,14 +109,14 @@ export default function EntregasPage() {
           {isLoading ? <Skeleton className="h-48 w-full mt-4" /> : (
             <>
               <TabsContent value="agenda"><Agenda entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} canManage={isLider} /></TabsContent>
-              {isLider && <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={(liderados ?? []).filter((l) => (isAdmin ? pessoa === "todos" || l.id === pessoa : meusIds.has(l.id)))} /></TabsContent>}
+              {isLider && <TabsContent value="reuniao"><Reuniao entregas={todas} liderados={lideradosFiltraveis.filter((l) => pessoa === "todos" || l.id === pessoa)} /></TabsContent>}
               <TabsContent value="historico"><HistoricoGeral entregas={todas} nome={nomeLiderado} onOpen={setSelecionada} canManage={isLider} /></TabsContent>
             </>
           )}
         </Tabs>
       </div>
 
-      <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo && (isAdmin || !meusIds.has(l.id)))} />
+      <NovaEntregaDialog open={novoOpen} onOpenChange={setNovoOpen} liderados={(liderados ?? []).filter((l) => l.ativo && (isAdmin || (isSupervisor && l.gestor_id === user?.id && l.perfil_acesso === "agent")))} />
       <DetalheEntrega entrega={selecionada} onClose={() => setSelecionada(null)} nome={nomeLiderado} />
     </AppShell>
   );
@@ -229,6 +231,7 @@ function HistoricoGeral({ entregas, nome, onOpen, canManage }: { entregas: Entre
 
 function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; onOpenChange: (o: boolean) => void; liderados: Liderado[] }) {
   const create = useCreateEntrega();
+  const convidar = useConvidarColaborador();
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [area, setArea] = useState("");
@@ -257,9 +260,14 @@ function NovaEntregaDialog({ open, onOpenChange, liderados }: { open: boolean; o
       }
       await create.mutateAsync({ titulo, descricao: descricao || undefined, area, liderado_cadastro_id: liderado, prazo, prazo_hora: hora || null, periodicidade });
       if (mail) {
-        const { data, error } = await supabase.functions.invoke("convidar-colaborador", { body: { liderado_id: liderado, redirect_to: window.location.origin } });
-        if (error || data?.error) toast.error("Entrega agendada, mas o convite falhou: " + (data?.error ?? error?.message));
-        else toast.success(data?.status === "ja_cadastrado" ? "Entrega agendada. O colaborador já tem acesso e verá a tarefa." : "Entrega agendada e convite enviado por e-mail.");
+        try {
+          const status = await convidar.mutateAsync(liderado);
+          toast.success(status === "already_registered"
+            ? "Entrega agendada. Este e-mail já possui uma conta e pode entrar com o acesso existente."
+            : "Entrega agendada. Convite enviado; o acesso será liberado após a confirmação do e-mail.");
+        } catch (error) {
+          toast.error("Entrega agendada, mas o convite não foi enviado: " + (error as Error).message);
+        }
       } else toast.success("Entrega agendada.");
       setTitulo(""); setDescricao(""); setArea(""); setPrazo(""); setHora(""); setPeriodicidade("unica"); setEmail(""); setLiderado("");
       onOpenChange(false);

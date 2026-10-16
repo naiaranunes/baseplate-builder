@@ -158,12 +158,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) return { error: authErrorMessage(error) };
 
+    if (!signUpData.user) return { error: "O serviço de cadastro não retornou os dados da conta." };
+    if (!signUpData.session) {
+      return { pending: true, emailConfirmationRequired: true };
+    }
+    if (!signUpData.user.email_confirmed_at) {
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) return { error: authErrorMessage(signOutError) };
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: redirectUrl },
+      });
+      if (resendError) return { error: authErrorMessage(resendError) };
+      return { pending: true, emailConfirmationRequired: true };
+    }
+
     // Determine approval status; if the on_auth_user_created trigger did not run
     // (common after a remix), fall back to the bootstrap-profile edge function.
     let isApproved: boolean | undefined = undefined;
     let userRole: AppRole | undefined;
-    const newUserId = signUpData.user?.id;
-    const hasSession = !!signUpData.session;
+    const newUserId = signUpData.user.id;
+    const hasSession = true;
 
     if (newUserId) {
       const { data: prof } = await supabase

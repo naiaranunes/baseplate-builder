@@ -90,6 +90,7 @@ vi.mock("@/hooks/useEntregas", () => ({
   useLiderados: () => ({ data: mocks.liderados, isLoading: false }),
   useMembros: () => ({ data: [] }),
   useHistorico: () => ({ data: [] }),
+  useConvidarColaborador: () => ({ mutateAsync: vi.fn().mockResolvedValue("sent") }),
   useAddComentario: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCreateEntrega: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useExcluirEntrega: () => ({ mutateAsync: vi.fn() }),
@@ -108,30 +109,52 @@ describe("EntregasPage access by profile", () => {
     mocks.role = "supervisor";
   });
 
-  it("shows a leader only their own agenda and history and restricts meeting view to their profile", async () => {
+  it("shows a leader's team agenda and history and meeting view", async () => {
     render(
       <MemoryRouter>
         <EntregasPage />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("heading", { name: "Minhas tarefas" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Agenda de Entregas" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Visão para reunião" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox")).toBeInTheDocument();
     let panel = screen.getByRole("tabpanel");
     expect(within(panel).getByText("Entrega do líder")).toBeInTheDocument();
-    expect(within(panel).queryByText("Entrega do colaborador")).not.toBeInTheDocument();
+    expect(within(panel).getByText("Entrega do colaborador")).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Histórico" }), { button: 0, ctrlKey: false });
     await waitFor(() => expect(screen.getByRole("tab", { name: "Histórico" })).toHaveAttribute("data-state", "active"));
     panel = screen.getByRole("tabpanel");
     expect(within(panel).getByText("Histórico do líder")).toBeInTheDocument();
-    expect(within(panel).queryByText("Histórico do colaborador")).not.toBeInTheDocument();
+    expect(within(panel).getByText("Histórico do colaborador")).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Visão para reunião" }), { button: 0, ctrlKey: false });
     await waitFor(() => expect(screen.getByRole("tab", { name: "Visão para reunião" })).toHaveAttribute("data-state", "active"));
     panel = screen.getByRole("tabpanel");
-    expect(within(panel).getByText("Líder")).toBeInTheDocument();
-    expect(within(panel).queryByText("Colaborador")).not.toBeInTheDocument();
+    expect(within(panel).getByText("Colaborador")).toBeInTheDocument();
+    expect(within(panel).queryByText("Líder", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("filters a leader's agenda by collaborator", async () => {
+    render(
+      <MemoryRouter>
+        <EntregasPage />
+      </MemoryRouter>,
+    );
+
+    const scrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = vi.fn();
+    try {
+      fireEvent.keyDown(screen.getByRole("combobox"), { key: "ArrowDown" });
+      fireEvent.click(await screen.findByRole("option", { name: "Colaborador" }));
+
+      const panel = screen.getByRole("tabpanel");
+      expect(within(panel).getByText("Entrega do colaborador")).toBeInTheDocument();
+      expect(within(panel).queryByText("Entrega do líder")).not.toBeInTheDocument();
+    } finally {
+      Element.prototype.scrollIntoView = scrollIntoView;
+    }
   });
 
   it("does not show meeting view to a collaborator", () => {

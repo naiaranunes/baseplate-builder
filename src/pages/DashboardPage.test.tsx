@@ -187,6 +187,52 @@ describe("DashboardPage", () => {
     expect(screen.queryByRole("heading", { name: "Comercial" })).not.toBeInTheDocument();
   });
 
+  it("includes a leader's direct reports in dashboard totals and panels", () => {
+    mocks.auth = { userId: "leader-user", isAdmin: false };
+    mocks.isSupervisor = true;
+    mocks.liderados = [
+      { id: "leader-profile", usuario_id: "leader-user", gestor_id: "admin-user", nome: "Líder" },
+      { id: "member-1", usuario_id: "agent-user", gestor_id: "leader-user", nome: "Ana Colaboradora" },
+      { id: "member-2", usuario_id: "other-user", gestor_id: "other-leader", nome: "Outro Colaborador" },
+    ];
+
+    render(
+      <BrowserRouter>
+        <DashboardPage />
+      </BrowserRouter>,
+    );
+
+    expect(screen.getByText("Total de Entregas").parentElement).toHaveTextContent("4");
+    expect(screen.getByText("No prazo").parentElement).toHaveTextContent("2");
+    expect(screen.getByText("Em risco").parentElement).toHaveTextContent("1");
+    expect(screen.getAllByText("Entregas atrasadas")[0].parentElement).toHaveTextContent("1");
+    expect(screen.getByText("Enviar relatório")).toBeInTheDocument();
+    expect(screen.queryByText("Atualizar orçamento")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Ana Colaboradora").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("heading", { name: "Comercial" })).not.toBeInTheDocument();
+  });
+
+  it("filters summary cards to deliveries due on the selected date", () => {
+    render(
+      <BrowserRouter>
+        <DashboardPage />
+      </BrowserRouter>,
+    );
+
+    const prazo = String(mocks.entregas.find((entrega) => entrega.id === "at-risk-1")?.prazo);
+    fireEvent.change(screen.getByLabelText("Filtrar cards pela data do prazo"), {
+      target: { value: prazo },
+    });
+
+    expect(screen.getByText("Total de Entregas").parentElement).toHaveTextContent("1");
+    expect(screen.getByText("No prazo").parentElement).toHaveTextContent("0");
+    expect(screen.getByText("Em risco").parentElement).toHaveTextContent("1");
+    expect(screen.getAllByText("Entregas atrasadas")[0].parentElement).toHaveTextContent("0");
+
+    fireEvent.click(screen.getByRole("button", { name: "Limpar" }));
+    expect(screen.getByText("Total de Entregas").parentElement).toHaveTextContent("5");
+  });
+
   it("shows the launch action for collaborators and opens the delivery launch dialog", () => {
     mocks.auth = { userId: "agent-user", isAdmin: false };
 

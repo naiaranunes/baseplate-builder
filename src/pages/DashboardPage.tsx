@@ -4,6 +4,7 @@ import { Plus, Target, TrendingUp, AlertTriangle, AlertCircle } from "lucide-rea
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useEntregas, useLiderados, type Entrega } from "@/hooks/useEntregas";
@@ -38,17 +39,19 @@ export default function DashboardPage() {
     isError: lideradosError,
     error: erroLiderados,
   } = useLiderados();
-  const meusIds = useMemo(
+  const idsVisiveis = useMemo(
     () => new Set((liderados ?? [])
-      .filter((liderado) => liderado.usuario_id === user?.id)
+      .filter((liderado) => liderado.usuario_id === user?.id
+        || (isSupervisor && liderado.gestor_id === user?.id))
       .map((liderado) => liderado.id)),
-    [liderados, user?.id],
+    [isSupervisor, liderados, user?.id],
   );
   const entregasVisiveis = useMemo(
-    () => entregasAtribuidas(entregasAgendadas ?? [], meusIds, isAdmin),
-    [entregasAgendadas, isAdmin, meusIds],
+    () => entregasAtribuidas(entregasAgendadas ?? [], idsVisiveis, isAdmin),
+    [entregasAgendadas, idsVisiveis, isAdmin],
   );
   const entregasDashboardLoading = entregasLoading || lideradosLoading;
+  const [dataFiltro, setDataFiltro] = useState("");
   const [agora, setAgora] = useState(() => new Date());
   useEffect(() => {
     const interval = window.setInterval(() => setAgora(new Date()), 60_000);
@@ -70,9 +73,12 @@ export default function DashboardPage() {
   );
 
   const summary = useMemo(() => {
-    const all = entregasVisiveis;
+    const all = dataFiltro
+      ? entregasVisiveis.filter((entrega) => entrega.prazo === dataFiltro)
+      : entregasVisiveis;
     return {
       total: all.length,
+      atrasadas: all.filter((entrega) => situacao(entrega, agora) === "atrasada").length,
       noPrazo: all.filter((entrega) => {
         const situacaoAtual = situacao(entrega, agora);
         return situacaoAtual === "no_prazo"
@@ -80,7 +86,7 @@ export default function DashboardPage() {
       }).length,
       emRisco: all.filter((entrega) => situacao(entrega, agora) === "proxima").length,
     };
-  }, [entregasVisiveis, agora]);
+  }, [dataFiltro, entregasVisiveis, agora]);
 
   const areaCards = useMemo(() => {
     const deliveries = entregasVisiveis;
@@ -142,6 +148,28 @@ export default function DashboardPage() {
         </div>
 
         {/* Summary cards */}
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <label htmlFor="dashboard-date-filter" className="text-sm font-medium">
+              Filtrar cards por data do prazo
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              id="dashboard-date-filter"
+              aria-label="Filtrar cards pela data do prazo"
+              type="date"
+              value={dataFiltro}
+              onChange={(event) => setDataFiltro(event.target.value)}
+              className="w-auto"
+            />
+            {dataFiltro && (
+              <Button type="button" variant="outline" onClick={() => setDataFiltro("")}>
+                Limpar
+              </Button>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <SummaryCard
             label="Total de Entregas"
@@ -169,7 +197,7 @@ export default function DashboardPage() {
           />
           <SummaryCard
             label="Entregas atrasadas"
-            value={atrasadas.length}
+            value={summary.atrasadas}
             icon={<AlertTriangle className="h-4 w-4" />}
             color="var(--color-red)"
             bg="var(--color-red-bg)"
