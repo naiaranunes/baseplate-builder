@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { authErrorMessage } from "@/lib/authErrorMessage";
 
 export default function AcceptInvitePage() {
   const { user, isLoading, refreshProfile } = useAuth();
@@ -32,7 +33,7 @@ export default function AcceptInvitePage() {
     setSaving(true);
     const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) {
-      setError(updateError.message);
+      setError(authErrorMessage(updateError));
       setSaving(false);
       return;
     }

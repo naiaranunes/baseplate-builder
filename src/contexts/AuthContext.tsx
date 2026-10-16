@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { AppRole, AuthContextValue, Profile } from "@/types/auth";
 import { AuthContext } from "@/contexts/auth-context";
+import { authErrorMessage } from "@/lib/authErrorMessage";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -110,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback<AuthContextValue["signIn"]>(async (email, password) => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
+    if (error) return { error: authErrorMessage(error) };
     if (!data.user) return { error: "Falha no login." };
 
     // Fetch approval/active state immediately so caller can route correctly.
@@ -148,14 +149,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback<AuthContextValue["signUp"]>(async (fullName, email, password) => {
     const { data: vd, error: vErr } = await supabase.functions.invoke("validate-signup", { body: { email } });
     if (vErr) return { error: "Falha ao validar cadastro." };
-    if (vd && vd.allowed === false) return { error: vd.message ?? "Cadastro não permitido." };
+    if (vd && vd.allowed === false) return { error: authErrorMessage(vd.message ?? "Cadastro não permitido.") };
 
     const redirectUrl = `${window.location.origin}/`;
     const { data: signUpData, error } = await supabase.auth.signUp({
       email, password,
       options: { emailRedirectTo: redirectUrl, data: { full_name: fullName } },
     });
-    if (error) return { error: error.message };
+    if (error) return { error: authErrorMessage(error) };
 
     // Determine approval status; if the on_auth_user_created trigger did not run
     // (common after a remix), fall back to the bootstrap-profile edge function.

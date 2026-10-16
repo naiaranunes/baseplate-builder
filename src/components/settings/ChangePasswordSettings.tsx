@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { authErrorMessage } from "@/lib/authErrorMessage";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -50,7 +51,7 @@ export default function ChangePasswordSettings() {
 
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
-        toast.error(`Não foi possível alterar a senha: ${error.message}`);
+        toast.error(authErrorMessage(error));
         return;
       }
 
@@ -59,8 +60,7 @@ export default function ChangePasswordSettings() {
       setConfirmPassword("");
       toast.success("Senha alterada com sucesso.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro inesperado.";
-      toast.error(`Não foi possível alterar a senha: ${message}`);
+      toast.error(authErrorMessage(error));
     } finally {
       setSaving(false);
     }

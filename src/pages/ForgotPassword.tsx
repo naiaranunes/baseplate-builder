@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { appUrl } from "@/lib/appUrl";
+import { authErrorMessage } from "@/lib/authErrorMessage";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -23,7 +24,7 @@ export default function ForgotPassword() {
     setLoading(false);
 
     if (error) {
-      setMessage(error.message);
+      setMessage(authErrorMessage(error));
       return;
     }
 

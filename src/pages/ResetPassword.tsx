@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { authErrorMessage } from "@/lib/authErrorMessage";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export default function ResetPassword() {
         });
         if (verifyError) {
           if (mounted) {
-            setError("O link de redefinição é inválido ou expirou. Solicite um novo link.");
+            setError(authErrorMessage(verifyError));
             setCheckingLink(false);
           }
           return;
@@ -121,7 +122,7 @@ export default function ResetPassword() {
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(authErrorMessage(error));
       return;
     }
 
