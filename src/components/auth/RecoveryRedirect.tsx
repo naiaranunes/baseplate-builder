@@ -8,10 +8,23 @@ export function RecoveryRedirect() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isPasswordRecovery && location.pathname !== "/reset-password") {
-      navigate("/reset-password", { replace: true });
+    const queryParams = new URLSearchParams(location.search);
+    const hashParams = new URLSearchParams(location.hash.slice(1));
+    const hasRecoveryLink =
+      queryParams.get("type") === "recovery" ||
+      hashParams.get("type") === "recovery";
+
+    if ((isPasswordRecovery || hasRecoveryLink) && location.pathname !== "/reset-password") {
+      navigate(
+        {
+          pathname: "/reset-password",
+          search: location.search,
+          hash: location.hash,
+        },
+        { replace: true },
+      );
     }
-  }, [isPasswordRecovery, location.pathname, navigate]);
+  }, [isPasswordRecovery, location.hash, location.pathname, location.search, navigate]);
 
   return null;
 }

@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     const email = String(lid.email ?? "").trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "E-mail inválido." }, 400);
 
-    const appUrl = Deno.env.get("APP_URL") ?? "https://baseplate-builder.lovable.app";
+    const appUrl = Deno.env.get("APP_URL") ?? "https://wiaflowgestao.lovable.app";
     let redirectTo: URL;
     try {
       redirectTo = typeof body.redirect_to === "string"

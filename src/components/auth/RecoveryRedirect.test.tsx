@@ -11,7 +11,13 @@ vi.mock("@/hooks/useAuth", () => ({ useAuth }));
 
 function CurrentPath() {
   const location = useLocation();
-  return <div data-testid="current-path">{location.pathname}</div>;
+  return (
+    <div data-testid="current-path">
+      {location.pathname}
+      {location.search}
+      {location.hash}
+    </div>
+  );
 }
 
 describe("RecoveryRedirect", () => {
@@ -50,5 +56,37 @@ describe("RecoveryRedirect", () => {
 
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByTestId("current-path")).toHaveTextContent("/dashboard");
+  });
+
+  it("routes recovery callbacks to the new-password form and preserves the recovery token", async () => {
+    useAuth.mockReturnValue({ isPasswordRecovery: false });
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          { pathname: "/auth", hash: "#access_token=token&type=recovery" },
+        ]}
+      >
+        <RecoveryRedirect />
+        <Routes>
+          <Route path="/auth" element={<div>Login</div>} />
+          <Route
+            path="/reset-password"
+            element={
+              <>
+                <div>Formulário de nova senha</div>
+                <CurrentPath />
+              </>
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Formulário de nova senha")).toBeInTheDocument();
+    expect(screen.getByTestId("current-path")).toHaveTextContent(
+      "/reset-password#access_token=token&type=recovery",
+    );
+    expect(screen.queryByText("Login")).not.toBeInTheDocument();
   });
 });

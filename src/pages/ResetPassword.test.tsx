@@ -56,7 +56,9 @@ describe("ResetPassword", () => {
 
     renderPage();
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/inválido ou expirou/i);
+    expect(await screen.findByRole("alert", {}, { timeout: 4000 })).toHaveTextContent(
+      /inválido ou expirou/i,
+    );
     expect(screen.getByRole("link", { name: "Solicitar novo link" })).toHaveAttribute(
       "href",
       "/forgot-password",

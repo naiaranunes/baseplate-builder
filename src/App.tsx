@@ -82,6 +82,16 @@ const App = () => (
 
             <Route path="/reset-password" element={<ResetPassword />} />
 
+            {/* Perfil pessoal de qualquer usuário autenticado */}
+            <Route
+              path="/perfil"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage profileOnly />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Aceite de convite de colaborador */}
             <Route path="/accept-invite" element={<AcceptInvitePage />} />
 

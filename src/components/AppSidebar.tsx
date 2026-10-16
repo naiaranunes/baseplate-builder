@@ -6,6 +6,7 @@ import { PackageCheck, Users,
   BarChart3,
   HelpCircle,
   Settings,
+  UserRound,
   Plus,
   LogOut,
 } from "lucide-react";
@@ -49,6 +50,7 @@ export function AppSidebar({
   ];
 
   const footerItems: NavItem[] = [
+    { title: "Meu perfil", url: "/perfil", icon: UserRound },
     { title: "Ajuda", url: "/ajuda", icon: HelpCircle },
     { title: "Configurações", url: "/configuracoes", icon: Settings, adminOnly: true },
   ];

@@ -35,7 +35,7 @@ describe("useConvidarColaborador", () => {
     expect(invoke).toHaveBeenCalledWith("convidar-colaborador", {
       body: {
         liderado_id: "collaborator-1",
-        redirect_to: "https://baseplate-builder.lovable.app/accept-invite",
+        redirect_to: "https://wiaflowgestao.lovable.app/accept-invite",
       },
     });
   });

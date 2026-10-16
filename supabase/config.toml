@@ -1,1 +1,12 @@
 project_id = "hdxlomqissgiofvdnbqv"
+
+[auth]
+site_url = "https://wiaflowgestao.lovable.app"
+additional_redirect_urls = [
+  "https://wiaflowgestao.lovable.app/reset-password",
+  "https://wiaflowgestao.lovable.app/accept-invite",
+]
+
+[auth.email.template.recovery]
+subject = "Redefina sua senha"
+content_path = "./supabase/templates/recovery.html"

@@ -51,16 +51,23 @@ em [`supabase/migrations`](supabase/migrations) que toca em `handle_new_user`.
 ## Recuperação de senha
 
 O link de recuperação aponta por padrão para
-`https://baseplate-builder.lovable.app/reset-password`, evitando usar o domínio
-do editor/preview do Lovable. Para outro domínio publicado, configure
+`https://wiaflowgestao.lovable.app/reset-password`, evitando usar o domínio do
+editor/preview do Lovable. Para outro domínio publicado, configure
 `VITE_APP_URL` com a origem pública desejada. Em **Supabase → Authentication →
 URL Configuration**, defina a origem publicada como **Site URL** e permita
-`https://baseplate-builder.lovable.app/reset-password` em **Redirect URLs**
-(adicione também as origens locais usadas no desenvolvimento, se necessário).
+`https://wiaflowgestao.lovable.app/reset-password` em **Redirect URLs**. Se esse
+endereço não estiver permitido, o Supabase pode redirecionar para a URL padrão
+do projeto (por exemplo, `/auth`) em vez do formulário de nova senha. Adicione
+também as origens locais usadas no desenvolvimento, se necessário.
 
-O template de e-mail de redefinição deve usar `{{ .ConfirmationURL }}` no link
-de confirmação. Assim, depois de validar o token, o Supabase redireciona para o
-formulário da aplicação, onde a pessoa informa e confirma a nova senha.
+O template de recuperação fica em `supabase/templates/recovery.html` e usa
+`{{ .ConfirmationURL }}` para respeitar o destino `/reset-password` enviado pelo
+app. A configuração em `supabase/config.toml` também define esse destino como
+URL permitida. Para aplicar o template e as URLs ao projeto Supabase, publique
+a configuração com `supabase config push` (com o CLI autenticado no projeto).
+Não use um endereço fixo como `{{ .SiteURL }}/auth` no botão: isso ignora o
+destino solicitado e abre a tela de login. Depois de publicar, solicite um novo
+e-mail; links já enviados continuam usando o endereço antigo.
 
 ## Convites de colaboradores
 
@@ -68,10 +75,10 @@ Ao cadastrar um colaborador em **Equipe → Novo colaborador**, informe o e-mail
 que ele usará para entrar. O convite de autenticação é enviado para esse
 endereço e redireciona para `/accept-invite`, onde o colaborador define e
 confirma a senha. Em **Supabase → Authentication → URL Configuration**, permita
-`https://baseplate-builder.lovable.app/accept-invite` em **Redirect URLs** (ou
-o caminho correspondente do domínio configurado em `VITE_APP_URL`). Se usar
-outro domínio, configure também o segredo `APP_URL` das Edge Functions com a
-mesma origem. O template de convite do Supabase deve usar
+`https://wiaflowgestao.lovable.app/accept-invite` em **Redirect URLs** (ou o
+caminho correspondente do domínio configurado em `VITE_APP_URL`). Se usar outro
+domínio, configure também o segredo `APP_URL` das Edge Functions com a mesma
+origem. O template de convite do Supabase deve usar
 `{{ .ConfirmationURL }}`.
 
 Para testar o fluxo ponta a ponta com contas reais:

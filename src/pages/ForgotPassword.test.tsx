@@ -55,7 +55,7 @@ describe("ForgotPassword", () => {
 
     await waitFor(() => {
       expect(resetPasswordForEmail).toHaveBeenCalledWith("user@example.com", {
-        redirectTo: "https://baseplate-builder.lovable.app/reset-password",
+        redirectTo: "https://wiaflowgestao.lovable.app/reset-password",
       });
     });
   });

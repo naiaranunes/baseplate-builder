@@ -9,6 +9,7 @@ import TeamSettings from "@/components/settings/TeamSettings";
 import DemonstrationSettings from "@/components/settings/DemonstrationSettings";
 import NotificacoesSettings from "@/components/settings/NotificacoesSettings";
 import OnboardingSettings from "@/components/settings/OnboardingSettings";
+import ChangePasswordSettings from "@/components/settings/ChangePasswordSettings";
 import { useAuth } from "@/hooks/useAuth";
 
 const VALID_TABS = [
@@ -76,6 +77,7 @@ export default function SettingsPage({ profileOnly = false }: { profileOnly?: bo
             </p>
           </div>
           <GeneralSettings />
+          <ChangePasswordSettings />
         </div>
       </AppShell>
     );

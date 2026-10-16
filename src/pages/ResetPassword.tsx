@@ -56,16 +56,17 @@ export default function ResetPassword() {
         sessionStorage.setItem("pw_recovery", "1");
       }
       const recoveryFlag = sessionStorage.getItem("pw_recovery") === "1";
+      const shouldWaitForSession = linkFromEmail || isPasswordRecovery || recoveryFlag;
 
-      // A sessão do link pode demorar alguns instantes para ser criada.
       let session = null;
       let sessionError = null;
-      for (let i = 0; i < 10 && mounted; i++) {
+      const attempts = shouldWaitForSession ? 10 : 1;
+      for (let i = 0; i < attempts && mounted; i++) {
         const res = await supabase.auth.getSession();
         session = res.data.session;
         sessionError = res.error;
         if (session || sessionError) break;
-        await new Promise((r) => setTimeout(r, 300));
+        if (i < attempts - 1) await new Promise((r) => setTimeout(r, 300));
       }
       if (!mounted) return;
 
